@@ -1,8 +1,10 @@
-# starshipit-mcp-server
+# StarShipIt MCP
 
-MCP server for the [StarShipIt](https://starshipit.com) API — gives LLMs full access to orders, shipments, tracking, rates, manifests, address book, and products.
+[![npm](https://img.shields.io/npm/v/@devkind/starshipit-mcp)](https://www.npmjs.com/package/@devkind/starshipit-mcp)
 
-## Tools (40 total)
+MCP server for the [StarShipIt](https://starshipit.com) shipping API. It lets an AI client manage orders, shipments, labels, tracking, rates, manifests, the address book and products.
+
+## Tools (40)
 
 | Domain | Count | Tools |
 |---|---|---|
@@ -10,35 +12,45 @@ MCP server for the [StarShipIt](https://starshipit.com) API — gives LLMs full 
 | Shipments | 6 | print label, print labels, print packing slips, manifest, clone, replace |
 | Tracking | 2 | track shipment, create tracking-only order |
 | Rates | 2 | get rates, get delivery services |
-| Address Book | 4 | list, add, update, delete |
-| Manifests | 4 | list manifests, get manifest files, manifest by tracking number, manifest by carrier |
+| Address book | 4 | list, add, update, delete |
+| Manifests | 4 | list, get files, manifest by tracking number, manifest by carrier |
 | Products | 4 | list/search, add, update, delete |
 
-## Setup
+15 tools only read data. The others change live data, and 5 are marked destructive: `starshipit_delete_order`, `starshipit_merge_orders`, `starshipit_replace_shipment`, `starshipit_delete_addresses`, `starshipit_delete_products`. Each tool declares MCP annotations (`readOnlyHint`, `destructiveHint`), so clients can ask for confirmation.
 
-### 1. Get API credentials
+## Credentials
 
-In your StarShipIt account go to **Settings → API** and copy:
-- **API Key** → `STARSHIPIT_API_KEY`
-- **Subscription Key** → `STARSHIPIT_SUBSCRIPTION_KEY`
+In StarShipIt, open **Settings → API** and copy two values:
 
-### 2. Install & build
+| Variable | StarShipIt field |
+|---|---|
+| `STARSHIPIT_API_KEY` | API Key |
+| `STARSHIPIT_SUBSCRIPTION_KEY` | Subscription key |
+
+The server starts without them and lists its tools. Each tool call returns an error until both are set.
+
+## Install
+
+Requires Node.js 22 or later.
+
+### Claude Desktop (MCPB bundle)
+
+Download `starshipit-mcp.mcpb` from the [latest release](https://github.com/devkindhq/starshipit-mcp/releases/latest) and open it. Claude Desktop asks for the two keys.
+
+### Claude Code
 
 ```bash
-npm install
-npm run build
+claude mcp add starshipit -e STARSHIPIT_API_KEY=... -e STARSHIPIT_SUBSCRIPTION_KEY=... -- npx -y @devkind/starshipit-mcp
 ```
 
-### 3. Configure Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+### Other MCP clients (JSON config)
 
 ```json
 {
   "mcpServers": {
     "starshipit": {
-      "command": "node",
-      "args": ["/absolute/path/to/starshipit-mcp-server/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@devkind/starshipit-mcp"],
       "env": {
         "STARSHIPIT_API_KEY": "your_api_key",
         "STARSHIPIT_SUBSCRIPTION_KEY": "your_subscription_key"
@@ -48,20 +60,55 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-### 4. Or run as HTTP server
+### HTTP mode
 
 ```bash
-STARSHIPIT_API_KEY=... STARSHIPIT_SUBSCRIPTION_KEY=... TRANSPORT=http PORT=3000 npm start
+TRANSPORT=http PORT=3000 STARSHIPIT_API_KEY=... STARSHIPIT_SUBSCRIPTION_KEY=... npx -y @devkind/starshipit-mcp
 ```
 
-Then point your MCP client at `http://localhost:3000/mcp`.
+The endpoint is `http://localhost:3000/mcp` (stateless Streamable HTTP), and `GET /health` returns the status and version.
+
+> **Warning:** HTTP mode has no authentication, and it uses the server's own StarShipIt keys for every request. Do not expose the port to a network you do not trust.
 
 ## Development
 
 ```bash
-# Watch mode
-STARSHIPIT_API_KEY=... STARSHIPIT_SUBSCRIPTION_KEY=... npm run dev
-
-# Build
+npm ci
+cp .env.example .env   # add your keys; .env is git-ignored
 npm run build
+node --env-file=.env dist/index.js
 ```
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Run from source with reload (`tsx watch`) |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm run lint` | ESLint with type-aware rules |
+| `npm run sync-tools` | Write the tool list into `manifest.json` (run after you add, rename or remove a tool) |
+| `npm run bundle` | Build `starshipit-mcp.mcpb` (production dependencies only) |
+
+CI runs lint, build and the tool-list check on Node 22 and 24, and builds the bundle on every pull request.
+
+## Releases
+
+Merges to `main` release automatically with [semantic-release](https://semantic-release.gitbook.io/), based on [Conventional Commits](https://www.conventionalcommits.org/):
+
+| Commit type | Release |
+|---|---|
+| `fix:` | patch |
+| `feat:` | minor |
+| `feat!:` or `BREAKING CHANGE:` | major |
+| `docs:`, `chore:`, `ci:`, `refactor:`, `test:` | none |
+
+A release publishes to npm, then creates a GitHub release with the MCPB bundle attached. Git tags and GitHub releases record the versions; `package.json` in git stays at `1.0.0`.
+
+To list a release on [Smithery](https://smithery.ai) (needs `gh` and `smithery` logged in):
+
+```bash
+node scripts/publish-smithery.js v1.2.3 --dry-run
+node scripts/publish-smithery.js v1.2.3
+```
+
+## License
+
+[ISC](LICENSE) © Devkind

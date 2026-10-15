@@ -1,6 +1,6 @@
 # Starshipit MCP Codebase Reference (`CODEBASE.md`)
 
-This document is the authoritative technical reference for the `starshipit-mcp` codebase (`starshipit-mcp-server`), written for AI agents and automated tools.
+This document is the authoritative technical reference for the `starshipit-mcp` codebase (npm package `@devkind/starshipit-mcp`), written for AI agents and automated tools.
 
 ---
 
@@ -10,38 +10,43 @@ This document is the authoritative technical reference for the `starshipit-mcp` 
 `starshipit-mcp` is a Model Context Protocol (MCP) server written in TypeScript that exposes the Starshipit Shipping and Logistics REST API to AI agents and LLM clients. It provides a structured interface comprising **40 distinct MCP tools** across 7 logistics domains: Orders, Shipments, Rates, Tracking, Manifests, Products (Catalog), and Address Book.
 
 ### 1.2 Runtime & Module Specifications
-- **Node.js Requirement:** `>=18.0.0` (`package.json`).
+- **Node.js Requirement:** `>=22` (`package.json` `engines`; CI tests Node 22 and 24).
 - **Module System:** Pure ECMAScript Modules (`"type": "module"`).
 - **TypeScript Configuration (`tsconfig.json`):**
   - Target: `ES2022`
   - Module & Resolution: `Node16` (requires `.js` extensions on relative imports in source code)
   - Output Directory: `./dist` (Source Root: `./src`)
   - Strict Mode: Enabled (`strict: true`)
-  - Declarations: `.d.ts` and `.map` files generated
+  - Output: `.js` and source maps only (no `.d.ts`; this is a CLI, not a library)
 - **Executable Binaries:**
-  - Binary entry point: `starshipit-mcp-server` -> `dist/index.js`
+  - Binary entry point: `starshipit-mcp` -> `dist/index.js`
   - Source entry point: `src/index.ts` with `#!/usr/bin/env node` shebang.
 - **Key Dependencies:**
-  - `@modelcontextprotocol/sdk` (`^1.6.1`): Core MCP server SDK (`McpServer`, `StdioServerTransport`, `StreamableHTTPServerTransport`).
-  - `axios` (`^1.7.9`): HTTP client for the Starshipit REST API.
-  - `zod` (`^3.23.8`): Schema definition and runtime validation for MCP tool inputs.
+  - `@modelcontextprotocol/sdk` (`^1.32.1`): Core MCP server SDK (`McpServer`, `StdioServerTransport`, `StreamableHTTPServerTransport`).
+  - `axios` (`^1.20.0`): HTTP client for the Starshipit REST API.
+  - `express` (`^5.3.0`): HTTP transport only.
+  - `zod` (`^3.25.76`): Schema definition and runtime validation for MCP tool inputs.
+- **Version:** read at runtime from `package.json` (`src/index.ts`); no version constant in `src`. semantic-release sets it in CI at release time.
 
 ### 1.3 Transport Modes & Server Lifecycle (`src/index.ts`)
 The server supports two mutually exclusive runtime transports, selected via `process.env.TRANSPORT`:
 
 1. **Stdio Transport (`TRANSPORT=stdio` or unset, default):**
-   - Implemented via `runStdio()` (`src/index.ts:47-53`).
+   - Implemented via `runStdio()` (`src/index.ts:36-41`).
    - Uses `StdioServerTransport` connected to process `stdin` and `stdout`.
    - **Critical Rule:** Standard output (`stdout`) is strictly reserved for JSON-RPC MCP framing. All logging, diagnostics, and errors MUST be routed to `console.error` (`stderr`).
 2. **HTTP / SSE Transport (`TRANSPORT=http`):**
-   - Implemented via `runHttp()` (`src/index.ts:55-79`).
+   - Implemented via `runHttp()` (`src/index.ts:43-70`).
    - Runs an Express application listening on `process.env.PORT` (default: `3000`).
-   - Endpoint `POST /mcp`: Handles incoming MCP JSON-RPC requests via `StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })`.
-   - Endpoint `GET /health`: Returns `{ status: 'ok', server: 'starshipit-mcp-server' }`.
+   - Endpoint `POST /mcp`: Stateless. Each request creates its own `McpServer` and `StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })`, and closes both when the response closes. An `McpServer` holds only one transport, so a shared server fails parallel requests with "Already connected to a transport".
+   - Endpoint `GET /health`: Returns `{ status: 'ok', server: 'starshipit-mcp', version }`.
+   - **Security:** no authentication, and `app.listen(port)` binds all interfaces. Every request uses the server's own StarShipIt keys.
 
-### 1.4 Known Packaging & Architecture Deficiencies
-- **Missing Production Dependency:** `express` is imported statically in `src/index.ts:5` (`import express from 'express';`), but `express` is listed only in `devDependencies` (as `@types/express`). In an environment installed with `npm install --omit=dev`, executing `dist/index.js` throws `ERR_MODULE_NOT_FOUND` on launch, even in stdio mode.
-- **HTTP Transport Concurrency:** In `runHttp()`, `server = createServer()` is called once at boot, but `server.connect(transport)` is invoked on each POST request inside `/mcp`. Under concurrent client sessions, this may cause transport collision or memory leaks in the MCP SDK.
+### 1.4 Packaging & Release
+- **npm package:** `@devkind/starshipit-mcp`, public. `files` ships only `dist/`.
+- **MCPB bundle:** `manifest.json` (MCPB `0.3`) defines `user_config` (both keys, `required` and `sensitive`) and a `tools` list (name + summary). `npm run sync-tools` (`scripts/sync-manifest-tools.js`) writes that list from the running server; CI fails if it is out of date. `npm run bundle` (`scripts/build-mcpb.js`) packs a staging copy with production dependencies only and copies the `package.json` version into the bundle manifest.
+- **Release:** `.github/workflows/release.yml` runs semantic-release (`.releaserc.json`) on each push to `main`: version from Conventional Commits, npm publish (trusted publishing via OIDC, `NPM_TOKEN` fallback), then a GitHub release with `starshipit-mcp.mcpb`. Nothing is committed back to `main` (rulesets require PRs). The npm plugin runs before the bundle step, so the bundle gets the release version.
+- **Smithery:** `scripts/publish-smithery.js <tag>` republishes a release bundle as `devkind/starshipit-mcp`, with full tool schemas added to its manifest copy (Smithery needs them; strict MCPB rejects them).
 
 ---
 
@@ -55,7 +60,7 @@ The server requires two distinct API credentials issued by Starshipit:
   - `TRANSPORT`: `'stdio'` | `'http'` (default `'stdio'`)
   - `PORT`: HTTP port number (default `'3000'`)
 
-Startup validation occurs in `validateEnv()` (`src/index.ts:15-28`). If either key is missing, the server prints a diagnostic to `stderr` and terminates with `process.exit(1)`.
+There is no startup validation: the server starts and lists its tools without keys (registries and `sync-tools` need this). Each API call reads the keys in `src/services/api-client.ts:4-14` and throws `"<NAME> environment variable is not set"` when one is missing; the tool returns that text with `isError: true`.
 
 ### 2.2 Network Client (`src/services/api-client.ts`)
 The API client is implemented as a functional module centered around `apiRequest<T>()`:
@@ -87,7 +92,7 @@ Errors are formatted via `handleApiError(error)` (`src/services/api-client.ts:47
 
 **Tool Return Protocol:**
 Tools catch exceptions and return `{ content: [{ type: 'text', text: handleApiError(error) }], isError: true }`.
-*(Note: As documented in Section 6, `src/tools/shipments.ts` and `src/tools/tracking.ts` inadvertently omit `isError: true` in their catch blocks, returning errors as plain text content).*
+All 40 tools follow this protocol.
 
 ---
 
@@ -644,8 +649,6 @@ AI agents interacting with or refactoring this codebase must account for the fol
 
 | Subsystem | Exact Issue | Source Reference | Real Starshipit API Behavior | Impact & Guidance |
 | :--- | :--- | :--- | :--- | :--- |
-| **Shipments** | Missing `isError: true` flag | `src/tools/shipments.ts:222, 286, 333, 385, 441, 496` | Starshipit returns standard error HTTP codes (400, 404, 409). | All 6 shipment tools catch errors and return `{ content: [...] }` **without** `isError: true`. The MCP client treats the error string as a successful tool invocation. |
-| **Tracking** | Missing `isError: true` flag | `src/tools/tracking.ts:236, 314` | Starshipit returns error codes. | Catches return without `isError: true`. |
 | **Tracking** | Singular `result` vs Plural `results` | `src/tools/tracking.ts:36, 64` | Returns `{ "results": { ... } }` | Code expects `data.result`. Because the API returns `results`, `data.result` is undefined, rendering `"No tracking data returned"`. |
 | **Tracking Orders** | Envelope shape mismatch | `src/tools/tracking.ts:55-59` | Returns `{ "orders": { "123": "TRACK123" } }` (dictionary) | Code expects `{ orders: [ { tracking_number } ] }` (array of objects). |
 | **Products** | Nested `data.products` envelope | `src/tools/products.ts:71, 108` | Returns `{ "data": { "products": [ ... ] } }` | Code looks for `data.products`. In Starshipit API, `products` is nested under `data`. Tool will report `"No products found"`. |
