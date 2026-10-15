@@ -70,6 +70,8 @@ export interface Rate {
   carrier_name?: string;
   service_name?: string;
   service_code?: string;
+  total_price?: number;
+  /** Not returned by the rates endpoints; kept for older responses. */
   price?: number;
   currency?: string;
   estimated_transit_days?: number;
@@ -95,10 +97,15 @@ export interface Address {
 }
 
 export interface Manifest {
-  manifest_id?: number;
-  created_date?: string;
-  carrier?: string;
-  tracking_numbers?: string[];
+  id?: number;
+  name?: string;
+  date?: string;
+  number?: number;
+  numberArticles?: number;
+  numberConsignments?: number;
+  fileName1?: string;
+  fileName2?: string;
+  carrierId?: number;
 }
 
 export interface Product {

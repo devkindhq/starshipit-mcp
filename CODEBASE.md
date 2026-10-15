@@ -335,7 +335,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `reprint` (optional boolean, default: false) — **Required to be `true`** if a label was previously generated.
 - **Endpoint:** `POST orders/shipment`
 - **Payload:** `{ order_id, carrier?, carrier_service_code?, packages?, reprint? }`
-- **Response:** JSON payload containing tracking numbers and printable label URLs/data.
+- **Response:** Raw JSON: `{ order_id, order_number, carrier_name, tracking_numbers[], labels[] (base64 strings), label_types[] }`.
 
 #### 20. `starshipit_print_labels`
 - **Annotations:** `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: false`, `openWorldHint: true`
@@ -345,7 +345,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `reprint` (optional boolean, default: false)
 - **Endpoint:** `POST orders/shipments`
 - **Payload:** `{ order_ids: [...], reprint? }`
-- **Response:** JSON payload containing array of generated labels and tracking numbers.
+- **Response:** Raw JSON: `{ labels: [{ label_type, label_base64_string }] }`.
 
 #### 21. `starshipit_print_packing_slips`
 - **Annotations:** `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: false`, `openWorldHint: true`
@@ -423,7 +423,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `tracking_number` (required string, min 1)
   - `response_format`
 - **Endpoint:** `GET track` (`?tracking_number=<tracking_number>`)
-- **Response:** Chronological tracking timeline in markdown or raw JSON.
+- **Response:** Markdown status and `tracking_events` timeline, or raw JSON `{ results: { tracking_status, tracking_events[], ... } }`.
 
 #### 28. `starshipit_create_tracking_order`
 - **Annotations:** `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: false`, `openWorldHint: true`
@@ -432,7 +432,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `orders` (required array, min 1): each entry requiring `carrier` (carrier code, e.g. `"AUSPOST"`), `tracking_number`, and at least one of `name` or `order_number`.
 - **Endpoint:** `POST orders/shipped`
 - **Payload:** `{ orders: [ { carrier, tracking_number, name?, order_number? } ] }`
-- **Response:** JSON confirming imported tracking orders.
+- **Response:** Raw JSON `{ orders: { "<order_id>": "<tracking_number>" } }` (a map, not an array).
 
 ---
 
@@ -444,7 +444,7 @@ The codebase uses three different address schemas for distinct operational conte
 - **Parameters:**
   - `limit`, `page`, `response_format`
 - **Endpoint:** `GET manifests` (`?limit=...&page=...`)
-- **Response:** Markdown list or JSON `{ manifests: Manifest[], total, page, limit }`.
+- **Response:** Markdown list or raw JSON `{ manifests: [{ id, name, date, numberArticles, numberConsignments, carrierId, ... }], total_count, total_pages }`.
 
 #### 30. `starshipit_get_manifest_files`
 - **Annotations:** `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, `openWorldHint: true`
@@ -453,7 +453,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `manifest_id` (optional positive integer filter)
   - `limit`, `page`, `response_format`
 - **Endpoint:** `GET manifests/files/` (trailing slash required)
-- **Response:** Markdown download URLs or JSON `{ files: ManifestFile[], total, page, limit }`.
+- **Response:** Markdown file names and sizes, or raw JSON `{ files: [{ file_name, file_data (base64) }] }`.
 
 #### 31. `starshipit_manifest_by_tracking`
 - **Annotations:** `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: true`, `openWorldHint: true`
@@ -492,7 +492,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `sort_direction` (enum: `'Ascending'` | `'Descending'`, default: `'Ascending'`)
   - `response_format`
 - **Endpoint:** `GET products`
-- **Response:** Markdown product catalogue or JSON `{ products, total_count, page_number, page_size }`.
+- **Response:** Markdown product catalogue or raw JSON `{ data: { products[] }, total_records, total_pages, page_number, page_size }`.
 
 #### 34. `starshipit_add_product`
 - **Annotations:** `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: false`, `openWorldHint: true`
@@ -647,17 +647,12 @@ The codebase uses three different address schemas for distinct operational conte
 
 AI agents interacting with or refactoring this codebase must account for the following runtime quirks and known discrepancies identified against the Starshipit API:
 
+Response shapes for tracking, products, rates, delivery services, manifests, manifest files and labels were checked against the saved examples in StarShipIt's Postman collection and fixed on 2026-10-16. The markdown formatters read `results`, `data.products`/`total_records`, `total_price`, and the manifest fields `id`/`name`/`date`/`numberConsignments`. Handlers that return raw JSON (labels, tracking-only orders) were never affected.
+
 | Subsystem | Exact Issue | Source Reference | Real Starshipit API Behavior | Impact & Guidance |
 | :--- | :--- | :--- | :--- | :--- |
-| **Tracking** | Singular `result` vs Plural `results` | `src/tools/tracking.ts:36, 64` | Returns `{ "results": { ... } }` | Code expects `data.result`. Because the API returns `results`, `data.result` is undefined, rendering `"No tracking data returned"`. |
-| **Tracking Orders** | Envelope shape mismatch | `src/tools/tracking.ts:55-59` | Returns `{ "orders": { "123": "TRACK123" } }` (dictionary) | Code expects `{ orders: [ { tracking_number } ] }` (array of objects). |
-| **Products** | Nested `data.products` envelope | `src/tools/products.ts:71, 108` | Returns `{ "data": { "products": [ ... ] } }` | Code looks for `data.products`. In Starshipit API, `products` is nested under `data`. Tool will report `"No products found"`. |
-| **Rates** | Pricing field name | `src/types.ts:73`, `src/tools/rates.ts:59` | Returns `total_price: 12.50` | Code reads `r.price`. Price column in markdown table renders as `'—'`. |
-| **Manifests** | Field naming mismatch | `src/types.ts:97-102`, `src/tools/manifests.ts:68-76` | Returns `{ id, name, date, numberArticles }` | Code looks for `manifest_id`, `carrier`, `created_date`. Renders as `Manifest N/A`. |
-| **Manifest Files** | Response format mismatch | `src/tools/manifests.ts:12-17, 96-101` | Returns `{ files: [ { file_name, file_data } ] }` | Code expects `file_url`, `manifest_id`, which evaluate to undefined. |
-| **Shipment Labels** | Response format mismatch | `src/tools/shipments.ts:9-23` | Returns `{ order_id, tracking_numbers: [...], labels: [ "<base64>" ] }` | Code expects `labels: [ { label_url, tracking_number } ]`. |
-| **Reprint Constraint** | Label reprint conflict | `src/tools/shipments.ts:91` | Starshipit returns `409 Conflict` if order already has a label. | Must pass `reprint: true` if an order already has a label generated. |
+| **Reprint Constraint** | Label reprint conflict | `src/tools/shipments.ts:92` | Starshipit returns `409 Conflict` if order already has a label. | Must pass `reprint: true` if an order already has a label generated. |
 | **Order Deletion** | HTTP DELETE with payload | `src/tools/orders.ts:1041` | `DELETE /orders/delete` requires `{ order_id }` in body. | Uses `apiRequest('orders/delete', 'DELETE', { order_id })`. Proxy configurations must allow request bodies on HTTP DELETE. |
-| **Address Updates** | HTTP POST instead of PUT | `src/tools/address-book.ts:397, 477` | Starshipit uses `POST addressbook/update` and `POST addressbook/delete`. | Do NOT change to HTTP `PUT` or `DELETE`; Starshipit rejects them. |
+| **Address Updates** | HTTP POST instead of PUT | `src/tools/address-book.ts:389, 462` | Starshipit uses `POST addressbook/update` and `POST addressbook/delete`. | Do NOT change to HTTP `PUT` or `DELETE`; Starshipit rejects them. |
 | **Order Types** | `destination` optionality | `src/types.ts:45` vs `orders.ts:124` | `GET orders/search` and `GET orders/shipped` flatten recipient fields and omit `destination`. | `src/types.ts` defines `destination: Destination;` as required, but search responses lack this object. `formatOrdersAsMarkdown` guards with `if (o.destination)`. |
 

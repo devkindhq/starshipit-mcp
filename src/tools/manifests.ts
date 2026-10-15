@@ -10,25 +10,20 @@ import { CHARACTER_LIMIT } from '../constants.js';
 // ---------------------------------------------------------------------------
 
 interface ManifestFile {
-  manifest_id?: number;
-  file_url?: string;
-  created_date?: string;
-  carrier?: string;
+  file_name?: string;
+  /** Base64 file content. */
+  file_data?: string;
 }
 
 interface ListManifestsResponse {
   manifests?: Manifest[];
-  total?: number;
-  page?: number;
-  limit?: number;
+  total_count?: number;
+  total_pages?: number;
   success?: boolean;
 }
 
 interface GetManifestFilesResponse {
   files?: ManifestFile[];
-  total?: number;
-  page?: number;
-  limit?: number;
   success?: boolean;
 }
 
@@ -50,7 +45,7 @@ interface ManifestByCarrierResponse {
 // Formatters
 // ---------------------------------------------------------------------------
 
-function formatManifestList(data: ListManifestsResponse, format: ResponseFormat): string {
+function formatManifestList(data: ListManifestsResponse, format: ResponseFormat, page: number): string {
   if (format === ResponseFormat.JSON) {
     return JSON.stringify(data, null, 2);
   }
@@ -61,24 +56,23 @@ function formatManifestList(data: ListManifestsResponse, format: ResponseFormat)
   }
 
   const lines: string[] = [
-    `## Manifests (page ${data.page ?? 1}, showing ${manifests.length} of ${data.total ?? manifests.length})`,
+    `## Manifests (page ${page}, showing ${manifests.length} of ${data.total_count ?? manifests.length})`,
     '',
   ];
 
   for (const m of manifests) {
-    lines.push(`### Manifest ${m.manifest_id ?? 'N/A'}`);
-    if (m.carrier) lines.push(`- **Carrier:** ${m.carrier}`);
-    if (m.created_date) lines.push(`- **Created:** ${m.created_date}`);
-    if (m.tracking_numbers && m.tracking_numbers.length > 0) {
-      lines.push(`- **Shipments:** ${m.tracking_numbers.length} tracking number(s)`);
-    }
+    lines.push(`### Manifest ${m.id ?? 'N/A'}${m.name ? ` — ${m.name}` : ''}`);
+    if (m.date) lines.push(`- **Date:** ${m.date}`);
+    if (m.carrierId !== undefined) lines.push(`- **Carrier ID:** ${m.carrierId}`);
+    if (m.numberConsignments !== undefined) lines.push(`- **Consignments:** ${m.numberConsignments}`);
+    if (m.numberArticles !== undefined) lines.push(`- **Articles:** ${m.numberArticles}`);
     lines.push('');
   }
 
   return lines.join('\n');
 }
 
-function formatManifestFiles(data: GetManifestFilesResponse, format: ResponseFormat): string {
+function formatManifestFiles(data: GetManifestFilesResponse, format: ResponseFormat, page: number): string {
   if (format === ResponseFormat.JSON) {
     return JSON.stringify(data, null, 2);
   }
@@ -89,15 +83,17 @@ function formatManifestFiles(data: GetManifestFilesResponse, format: ResponseFor
   }
 
   const lines: string[] = [
-    `## Manifest Files (page ${data.page ?? 1}, showing ${files.length} of ${data.total ?? files.length})`,
+    `## Manifest Files (page ${page}, ${files.length} file${files.length === 1 ? '' : 's'})`,
     '',
   ];
 
   for (const f of files) {
-    lines.push(`### Manifest ${f.manifest_id ?? 'N/A'}`);
-    if (f.carrier) lines.push(`- **Carrier:** ${f.carrier}`);
-    if (f.created_date) lines.push(`- **Created:** ${f.created_date}`);
-    if (f.file_url) lines.push(`- **Download URL:** ${f.file_url}`);
+    lines.push(`### ${f.file_name ?? '(unnamed file)'}`);
+    if (f.file_data) {
+      const bytes = Math.round((f.file_data.length * 3) / 4);
+      const size = bytes < 1024 ? `${bytes} bytes` : `~${Math.round(bytes / 1024)} KB`;
+      lines.push(`- **Size:** ${size} (base64 content in the JSON format; output over ${CHARACTER_LIMIT} characters is truncated)`);
+    }
     lines.push('');
   }
 
@@ -181,7 +177,7 @@ Manifests group shipments that have been closed/submitted to a carrier. A manife
           page,
         });
 
-        const formatted = formatManifestList(data, response_format ?? ResponseFormat.MARKDOWN);
+        const formatted = formatManifestList(data, response_format ?? ResponseFormat.MARKDOWN, page ?? 1);
         return {
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
@@ -250,7 +246,7 @@ Each manifest can have one or more associated document files (typically a PDF) t
           { manifest_id, limit, page },
         );
 
-        const formatted = formatManifestFiles(data, response_format ?? ResponseFormat.MARKDOWN);
+        const formatted = formatManifestFiles(data, response_format ?? ResponseFormat.MARKDOWN, page ?? 1);
         return {
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };

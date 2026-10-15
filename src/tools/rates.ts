@@ -55,10 +55,8 @@ function formatRatesMarkdown(rates: Rate[]): string {
   const rows = rates.map((r) => {
     const carrier = r.carrier_name ?? r.carrier ?? '—';
     const service = r.service_name ?? r.service_code ?? '—';
-    const price =
-      r.price !== undefined
-        ? `${r.currency ?? ''} ${r.price.toFixed(2)}`.trim()
-        : '—';
+    const amount = r.total_price ?? r.price;
+    const price = amount !== undefined ? `${r.currency ?? ''} ${amount.toFixed(2)}`.trim() : '—';
     const transit =
       r.estimated_transit_days !== undefined
         ? `${r.estimated_transit_days} day${r.estimated_transit_days === 1 ? '' : 's'}`

@@ -11,29 +11,27 @@ import { CHARACTER_LIMIT } from '../constants.js';
 // ── Response shape interfaces ────────────────────────────────────────────────
 
 interface TrackingEvent {
-  description?: string;
-  date?: string;
-  location?: string;
+  event_datetime?: string;
+  status?: string;
+  details?: string;
 }
 
 interface TrackingResult {
-  tracking_number?: string;
-  status?: string;
-  carrier?: string;
+  order_number?: string;
+  order_status?: string;
   carrier_name?: string;
-  service?: string;
-  estimated_delivery?: string;
-  shipped_date?: string;
-  delivered_date?: string;
-  origin?: string;
-  destination?: string;
-  events?: TrackingEvent[];
-  error?: string;
+  carrier_service?: string;
+  tracking_number?: string;
+  tracking_url?: string;
+  shipment_date?: string;
+  tracking_status?: string;
+  last_updated_date?: string;
+  tracking_events?: TrackingEvent[];
 }
 
 interface TrackingResponse {
   success?: boolean;
-  result?: TrackingResult;
+  results?: TrackingResult;
   errors?: string[];
 }
 
@@ -44,24 +42,17 @@ interface TrackingOrderEntry {
   tracking_number: string;
 }
 
-interface CreatedTrackingOrder {
-  order_id?: number;
-  order_number?: string;
-  tracking_number?: string;
-  carrier?: string;
-  error?: string;
-}
-
 interface CreateTrackingOrderResponse {
   success?: boolean;
-  orders?: CreatedTrackingOrder[];
+  /** Order ID → tracking number. */
+  orders?: Record<string, string>;
   errors?: string[];
 }
 
 // ── Formatting helpers ───────────────────────────────────────────────────────
 
 function formatTrackingMarkdown(data: TrackingResponse): string {
-  const r = data.result;
+  const r = data.results;
   if (!r) {
     if (data.errors && data.errors.length > 0) {
       return `Error: ${data.errors.join('; ')}`;
@@ -73,45 +64,23 @@ function formatTrackingMarkdown(data: TrackingResponse): string {
 
   lines.push(`## Tracking: ${r.tracking_number ?? 'Unknown'}`);
   lines.push('');
-  lines.push(`**Status:** ${r.status ?? 'Unknown'}`);
+  lines.push(`**Status:** ${r.tracking_status ?? 'Unknown'}`);
 
-  if (r.carrier_name ?? r.carrier) {
-    lines.push(`**Carrier:** ${r.carrier_name ?? r.carrier}`);
-  }
-  if (r.service) {
-    lines.push(`**Service:** ${r.service}`);
-  }
-  if (r.shipped_date) {
-    lines.push(`**Shipped:** ${r.shipped_date}`);
-  }
-  if (r.estimated_delivery) {
-    lines.push(`**Estimated Delivery:** ${r.estimated_delivery}`);
-  }
-  if (r.delivered_date) {
-    lines.push(`**Delivered:** ${r.delivered_date}`);
-  }
-  if (r.origin) {
-    lines.push(`**Origin:** ${r.origin}`);
-  }
-  if (r.destination) {
-    lines.push(`**Destination:** ${r.destination}`);
-  }
+  if (r.order_number) lines.push(`**Order:** ${r.order_number} (${r.order_status ?? 'unknown status'})`);
+  if (r.carrier_name) lines.push(`**Carrier:** ${r.carrier_name}`);
+  if (r.carrier_service) lines.push(`**Service:** ${r.carrier_service}`);
+  if (r.shipment_date) lines.push(`**Shipped:** ${r.shipment_date}`);
+  if (r.last_updated_date) lines.push(`**Last Updated:** ${r.last_updated_date}`);
+  if (r.tracking_url) lines.push(`**Tracking URL:** ${r.tracking_url}`);
 
-  if (r.events && r.events.length > 0) {
+  if (r.tracking_events && r.tracking_events.length > 0) {
     lines.push('');
     lines.push('### Tracking Events');
     lines.push('');
-    for (const event of r.events) {
-      const date = event.date ?? '';
-      const location = event.location ? ` — ${event.location}` : '';
-      const description = event.description ?? '(no description)';
-      lines.push(`- **${date}${location}:** ${description}`);
+    for (const event of r.tracking_events) {
+      const status = event.status ? ` — ${event.status}` : '';
+      lines.push(`- **${event.event_datetime ?? ''}${status}:** ${event.details ?? '(no details)'}`);
     }
-  }
-
-  if (r.error) {
-    lines.push('');
-    lines.push(`**Error:** ${r.error}`);
   }
 
   return lines.join('\n');

@@ -6,19 +6,20 @@ import { CHARACTER_LIMIT } from '../constants.js';
 
 // ── Response shape interfaces ────────────────────────────────────────────────
 
+// orders/shipment returns base64 label strings; orders/shipments returns label objects.
 interface LabelEntry {
-  order_id?: number;
-  tracking_number?: string;
-  label_url?: string;
-  label_data?: string;
-  carrier?: string;
-  carrier_service?: string;
-  error?: string;
+  label_type?: string;
+  label_base64_string?: string;
 }
 
 interface PrintLabelResponse {
   success?: boolean;
-  labels?: LabelEntry[];
+  order_id?: number;
+  order_number?: string;
+  carrier_name?: string;
+  tracking_numbers?: string[];
+  labels?: (string | LabelEntry)[];
+  label_types?: string[];
   errors?: string[];
 }
 

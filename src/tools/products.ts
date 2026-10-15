@@ -68,11 +68,12 @@ const ProductFieldsSchema = z.object({
 // ---------------------------------------------------------------------------
 
 interface ListProductsResponse {
-  products?: Product[];
-  total_count?: number;
+  data?: { products?: Product[]; success?: boolean };
+  total_records?: number;
+  total_pages?: number;
   page_number?: number;
   page_size?: number;
-  success?: boolean;
+  succeeded?: boolean;
 }
 
 interface AddProductResponse {
@@ -105,13 +106,13 @@ function formatProductList(data: ListProductsResponse, format: ResponseFormat): 
     return JSON.stringify(data, null, 2);
   }
 
-  const products = data.products ?? [];
+  const products = data.data?.products ?? [];
   if (products.length === 0) {
     return 'No products found.';
   }
 
   const lines: string[] = [
-    `## Products (page ${data.page_number ?? 1}, showing ${products.length} of ${data.total_count ?? products.length})`,
+    `## Products (page ${data.page_number ?? 1}, showing ${products.length} of ${data.total_records ?? products.length})`,
     '',
   ];
 
