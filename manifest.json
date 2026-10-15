@@ -12,7 +12,7 @@
 		"type": "git",
 		"url": "https://github.com/devkindhq/starshipit-mcp"
 	},
-	"homepage": "https://github.com/devkindhq/starshipit-mcp#readme",
+	"homepage": "https://www.npmjs.com/package/@devkind/starshipit-mcp",
 	"icon": "assets/icon.png",
 	"license": "ISC",
 	"keywords": [
@@ -192,7 +192,7 @@
 		},
 		{
 			"name": "starshipit_get_manifest_files",
-			"description": "Retrieve manifest file URLs for downloading manifest documents (PDFs, etc.)."
+			"description": "Retrieve manifest documents (PDF, XML, etc.) as base64 file content."
 		},
 		{
 			"name": "starshipit_manifest_by_tracking",

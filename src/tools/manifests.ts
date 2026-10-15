@@ -28,14 +28,16 @@ interface GetManifestFilesResponse {
 }
 
 interface ManifestByTrackingResponse {
-  manifest_id?: number;
+  file_name?: string;
+  /** Base64 manifest PDF. */
+  pdf?: string;
   success?: boolean;
   errors?: unknown;
   message?: string;
 }
 
 interface ManifestByCarrierResponse {
-  manifest_id?: number;
+  records_manifested?: number;
   success?: boolean;
   errors?: unknown;
   message?: string;
@@ -116,8 +118,11 @@ function formatManifestResult(
     if (data.errors) lines.push(`**Errors:** ${JSON.stringify(data.errors, null, 2)}`);
   } else {
     lines.push('**Status:** Success');
-    if (data.manifest_id !== undefined) {
-      lines.push(`**Manifest ID:** ${data.manifest_id}`);
+    if ('records_manifested' in data && data.records_manifested !== undefined) {
+      lines.push(`**Records manifested:** ${data.records_manifested}`);
+    }
+    if ('file_name' in data && data.file_name) {
+      lines.push(`**Manifest file:** ${data.file_name} (base64 PDF in the JSON format)`);
     }
     if (data.message) lines.push(`**Message:** ${data.message}`);
   }
@@ -141,13 +146,15 @@ export function registerManifestTools(server: McpServer): void {
 
 Manifests group shipments that have been closed/submitted to a carrier. A manifest is created when you "manifest" a set of shipments, signalling to the carrier that they are ready for collection.
 
-**Returns:** Manifest ID, carrier name, created date, and the tracking numbers included in each manifest.
+**Returns:** Manifest ID, name, date, carrier ID, and the number of consignments and articles in each manifest.
 
 **Example response fields:**
-- \`manifest_id\`: Unique identifier for the manifest
-- \`carrier\`: The carrier the manifest was submitted to (e.g. "AusPost", "DHL")
-- \`created_date\`: ISO 8601 timestamp of when the manifest was created
-- \`tracking_numbers\`: Array of tracking numbers included in this manifest
+- \`id\`: Unique identifier for the manifest
+- \`name\`: Manifest name
+- \`date\`: ISO 8601 timestamp of the manifest
+- \`carrierId\`: Numeric carrier ID
+- \`numberConsignments\` / \`numberArticles\`: Counts in the manifest
+- \`total_count\` / \`total_pages\`: Pagination totals
 
 **Pagination:** Use \`limit\` (max 250) and \`page\` to page through results.
 
@@ -194,9 +201,9 @@ Manifests group shipments that have been closed/submitted to a carrier. A manife
     'starshipit_get_manifest_files',
     {
       title: 'Get Manifest Files',
-      description: `Retrieve manifest file URLs for downloading manifest documents (PDFs, etc.).
+      description: `Retrieve manifest documents (PDF, XML, etc.) as base64 file content.
 
-Each manifest can have one or more associated document files (typically a PDF) that you submit to the carrier at pickup. This tool returns the download URLs for those files.
+Each manifest can have one or more associated document files that you submit to the carrier at pickup. The markdown format lists file names and sizes; the JSON format includes the base64 content, truncated if the output exceeds 25000 characters.
 
 **Query parameters:**
 - \`manifest_id\` (optional): Filter to files for a specific manifest. Omit to list files across all manifests.
@@ -204,10 +211,7 @@ Each manifest can have one or more associated document files (typically a PDF) t
 - \`page\`: Page number (default 1)
 
 **Returns:**
-- \`manifest_id\`: The manifest this file belongs to
-- \`file_url\`: Direct URL to download the manifest document
-- \`carrier\`: Carrier the manifest was submitted to
-- \`created_date\`: When the manifest was created
+- \`files\`: Array of \`{ file_name, file_data }\`, where \`file_data\` is the base64 file content
 
 **Error cases:**
 - 404: Manifest ID not found
@@ -272,7 +276,8 @@ This closes the selected shipments and submits them to the carrier, creating a m
 - \`use_order_numbers\` (optional): Set to \`true\` if the values in \`tracking_numbers\` are actually order numbers rather than carrier tracking numbers. Default: \`false\`.
 
 **Returns:**
-- \`manifest_id\`: The ID of the newly created manifest
+- \`file_name\`: Name of the manifest document
+- \`pdf\`: Base64 manifest PDF (JSON format only)
 - \`success\`: Whether the manifest was created successfully
 - \`errors\`: Any per-shipment errors (e.g. shipment already manifested)
 
@@ -352,7 +357,7 @@ This is a bulk operation that closes every shipment that is ready-to-manifest fo
   Check your StarShipIt account carrier settings for the exact identifier strings available.
 
 **Returns:**
-- \`manifest_id\`: The ID of the newly created manifest
+- \`records_manifested\`: Number of shipments manifested
 - \`success\`: Whether the manifest was created successfully
 - \`errors\`: Any errors encountered during manifesting
 

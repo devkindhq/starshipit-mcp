@@ -36,7 +36,7 @@ The server supports two mutually exclusive runtime transports, selected via `pro
    - **Critical Rule:** Standard output (`stdout`) is strictly reserved for JSON-RPC MCP framing. All logging, diagnostics, and errors MUST be routed to `console.error` (`stderr`).
 2. **HTTP / SSE Transport (`TRANSPORT=http`):**
    - Implemented via `runHttp()` (`src/index.ts:43-70`).
-   - Runs the SDK's `createMcpExpressApp({ host })` on `process.env.MCP_HOST` (default `127.0.0.1`) and `process.env.PORT` (default `3000`). For a localhost host the SDK rejects other `Host` headers with 403 (DNS rebinding protection); `MCP_HOST=0.0.0.0` disables that and the SDK prints a warning.
+   - Runs the SDK's `createMcpExpressApp({ host })` on `process.env.MCP_HOST` (default `127.0.0.1`) and `process.env.PORT` (default `3000`). For `127.0.0.1`, `localhost` or `::1` the SDK rejects other `Host` headers with 403 (DNS rebinding protection). Any other host (for example `0.0.0.0` or a LAN IP) disables that check; the SDK prints a warning only for `0.0.0.0` and `::`. `GET`/`DELETE /mcp` return 405 (stateless: no SSE stream, no session).
    - Endpoint `POST /mcp`: Stateless. Each request creates its own `McpServer` and `StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })`, and closes both when the response closes. An `McpServer` holds only one transport, so a shared server fails parallel requests with "Already connected to a transport".
    - Endpoint `GET /health`: Returns `{ status: 'ok', server: 'starshipit-mcp', version }`.
    - **Security:** no authentication. Every request uses the server's own StarShipIt keys, so a non-local `MCP_HOST` needs an authenticating proxy.
@@ -363,7 +363,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `order_ids` (required array of positive integers, min 1 — all orders must already have printed labels)
 - **Endpoint:** `POST orders/manifest`
 - **Payload:** `{ order_ids: [...] }`
-- **Response:** JSON with `manifest_id`, carrier, and manifested tracking numbers.
+- **Response:** Raw JSON `{ label_type, pdf (base64), success }`.
 
 #### 23. `starshipit_clone_shipment`
 - **Annotations:** `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: false`, `openWorldHint: true`
@@ -464,7 +464,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `response_format`
 - **Endpoint:** `POST manifests/shipments`
 - **Payload:** `{ tracking_numbers: [...], use_order_numbers?: boolean }`
-- **Response:** Confirmation of generated `manifest_id` and submission status.
+- **Response:** `{ file_name, pdf (base64), success }`; markdown shows the file name.
 
 #### 32. `starshipit_manifest_by_carrier`
 - **Annotations:** `readOnlyHint: false`, `destructiveHint: false`, `idempotentHint: true`, `openWorldHint: true`
@@ -474,7 +474,7 @@ The codebase uses three different address schemas for distinct operational conte
   - `response_format`
 - **Endpoint:** `POST manifests/carrier`
 - **Payload:** `{ carrier: string }`
-- **Response:** Confirmation of closed `manifest_id` and carrier batch status.
+- **Response:** `{ records_manifested, success }`; markdown shows the count.
 
 ---
 

@@ -10,7 +10,11 @@ updates:
       prefix-development: chore
       include: scope
     groups:
-      minor-and-patch:
+      runtime:
+        dependency-type: production
+        update-types: [minor, patch]
+      dev:
+        dependency-type: development
         update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /

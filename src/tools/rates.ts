@@ -77,7 +77,7 @@ export function registerRatesTools(server: McpServer): void {
       title: 'Get Shipping Rates',
       description: `Get available shipping rates (quotes) for a shipment between a sender and destination address with the given package dimensions.
 
-**When to use:** Call this before creating an order when you need to compare carriers by price or transit time. It is read-only and safe to call multiple times.
+**When to use:** Call this before creating an order when you need to compare services by price. It is read-only and safe to call multiple times.
 
 **Required parameters:**
 - \`sender\` — pickup/origin address (street, suburb, post_code, country_code are required; city and state are optional but improve accuracy)
@@ -85,11 +85,8 @@ export function registerRatesTools(server: McpServer): void {
 - \`packages\` — array of package objects; each must have \`weight\` (kg); \`height\`, \`width\`, \`length\` (all in metres) are optional but recommended for volumetric pricing
 
 **Returns:** An array of rate objects, each with:
-- \`carrier\` / \`carrier_name\` — carrier identifier and display name
 - \`service_name\` / \`service_code\` — service description and machine-readable code (use service_code when setting a carrier on an order)
-- \`price\` — quoted price in the account currency
-- \`currency\` — ISO currency code (e.g. "AUD")
-- \`estimated_transit_days\` — estimated business days for delivery
+- \`total_price\` — quoted price in the account currency
 
 **Errors:**
 - 400 — invalid address or package data (check post_code format and country_code)
@@ -172,7 +169,8 @@ export function registerRatesTools(server: McpServer): void {
 **Returns:** An array of service objects, each with:
 - \`carrier\` / \`carrier_name\` — carrier identifier and display name
 - \`service_name\` / \`service_code\` — description and the code to pass to order create/update
-- \`price\`, \`currency\`, \`estimated_transit_days\`
+- \`total_price\` — quoted price
+- \`pricing_breakdown\` — price ex GST, GST, and estimated delivery days (JSON format)
 
 **Errors:**
 - 400 — missing required fields or invalid address/package data

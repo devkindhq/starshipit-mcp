@@ -148,29 +148,28 @@ export function registerTrackingTools(server: McpServer): void {
       title: 'Track Shipment',
       description: `Track a shipment by tracking number using StarShipIt.
 
-**When to use:** Use this tool to retrieve the current status, tracking events, carrier details, and estimated delivery for any shipment tracked through StarShipIt. This works for shipments created in StarShipIt as well as tracking-only orders imported via \`starshipit_create_tracking_order\`.
+**When to use:** Use this tool to retrieve the current status, tracking events and carrier details for any shipment tracked through StarShipIt. This works for shipments created in StarShipIt as well as tracking-only orders imported via \`starshipit_create_tracking_order\`.
 
 **Parameters:**
 - \`tracking_number\` (required): The carrier tracking number to look up (e.g. \`"1Z999AA10123456784"\`).
 - \`response_format\` (optional): Output format — \`"markdown"\` (default) for a human-readable summary with formatted tracking events, or \`"json"\` for the raw API response suitable for programmatic use.
 
-**Returns:** Tracking status, a chronological list of tracking events (with date, location, and description), carrier name, service, shipped date, and estimated/actual delivery date.
+**Returns:** Tracking status, order number and status, carrier name, service, shipment date, last update, carrier tracking URL, and a list of tracking events (date, status, details).
 
 **Example success response (markdown format):**
 \`\`\`
-## Tracking: 1Z999AA10123456784
+## Tracking: 2XD198209601000935102
 
 **Status:** In Transit
-**Carrier:** UPS
-**Service:** EXPRESS
-**Shipped:** 2024-01-14T08:00:00Z
-**Estimated Delivery:** 2024-01-16T18:00:00Z
+**Order:** C12346 (Shipped)
+**Carrier:** Australia Post
+**Service:** 7B05
+**Shipped:** 2024-04-17T12:52:05
+**Tracking URL:** https://auspost.com.au/mypost/track/details/2XD198209601000935102
 
 ### Tracking Events
 
-- **2024-01-14T08:00:00Z — Sydney, NSW:** Package picked up
-- **2024-01-14T14:30:00Z — Sydney Airport:** Departed facility
-- **2024-01-15T09:00:00Z — Melbourne, VIC:** Arrived at destination facility
+- **2024-04-17T13:20:18 — In Transit:** Item processed at facility
 \`\`\`
 
 **Error cases:** 404 if the tracking number is not found in StarShipIt; 400 if the tracking number format is invalid.`,

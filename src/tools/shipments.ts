@@ -32,10 +32,9 @@ interface PrintPackingSlipsResponse {
 
 interface ManifestResponse {
   success?: boolean;
-  manifest_id?: number;
-  created_date?: string;
-  carrier?: string;
-  tracking_numbers?: string[];
+  label_type?: string;
+  /** Base64 manifest PDF. */
+  pdf?: string;
   errors?: string[];
 }
 
@@ -351,16 +350,14 @@ export function registerShipmentTools(server: McpServer): void {
 **Parameters:**
 - \`order_ids\` (required): Array of numeric StarShipIt order IDs to include in the manifest. All orders must already have labels printed.
 
-**Returns:** A manifest record containing the manifest ID, creation timestamp, carrier, and list of tracking numbers that were manifested.
+**Returns:** The manifest document as a base64 PDF, with its label type.
 
 **Example success response:**
 \`\`\`json
 {
   "success": true,
-  "manifest_id": 7890,
-  "created_date": "2024-01-15T09:30:00Z",
-  "carrier": "AUSPOST",
-  "tracking_numbers": ["TRACK001", "TRACK002", "TRACK003"]
+  "label_type": "PDF",
+  "pdf": "JVBERi0xLjQK..."
 }
 \`\`\`
 

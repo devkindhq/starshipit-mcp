@@ -11,10 +11,6 @@
     "ecommerce",
     "claude"
   ],
-  "homepage": "https://github.com/devkindhq/starshipit-mcp#readme",
-  "bugs": {
-    "url": "https://github.com/devkindhq/starshipit-mcp/issues"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/devkindhq/starshipit-mcp.git"

@@ -59,6 +59,10 @@ function runHttp(): void {
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   });
+  // Stateless: no SSE stream or session to delete. Clients treat 405 as "not offered".
+  app.all('/mcp', (_req, res) => {
+    res.status(405).set('Allow', 'POST').end();
+  });
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', server: 'starshipit-mcp', version });
