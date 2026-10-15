@@ -234,7 +234,7 @@ export function registerTrackingTools(server: McpServer): void {
         text = truncateIfNeeded(text, CHARACTER_LIMIT);
         return { content: [{ type: 'text' as const, text }] };
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
       }
     },
   );
@@ -312,7 +312,7 @@ export function registerTrackingTools(server: McpServer): void {
         const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
         return { content: [{ type: 'text' as const, text }] };
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
       }
     },
   );

@@ -12,21 +12,6 @@ import { registerAddressBookTools } from './tools/address-book.js';
 import { registerManifestTools } from './tools/manifests.js';
 import { registerProductTools } from './tools/products.js';
 
-function validateEnv(): void {
-  const missing: string[] = [];
-  if (!process.env.STARSHIPIT_API_KEY) missing.push('STARSHIPIT_API_KEY');
-  if (!process.env.STARSHIPIT_SUBSCRIPTION_KEY) missing.push('STARSHIPIT_SUBSCRIPTION_KEY');
-  if (missing.length > 0) {
-    console.error(
-      `ERROR: Missing required environment variables: ${missing.join(', ')}\n` +
-        'Set them in your environment or .env file:\n' +
-        '  STARSHIPIT_API_KEY       — from Settings > API > API Key\n' +
-        '  STARSHIPIT_SUBSCRIPTION_KEY — from Settings > API > Subscription key'
-    );
-    process.exit(1);
-  }
-}
-
 function createServer(): McpServer {
   const server = new McpServer({
     name: 'starshipit-mcp-server',
@@ -45,25 +30,27 @@ function createServer(): McpServer {
 }
 
 async function runStdio(): Promise<void> {
-  validateEnv();
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('StarShipIt MCP server running via stdio');
 }
 
-async function runHttp(): Promise<void> {
-  validateEnv();
-  const server = createServer();
+function runHttp(): void {
   const app = express();
   app.use(express.json());
 
+  // Stateless mode: one server per request, because a server holds only one transport.
   app.post('/mcp', async (req, res) => {
+    const server = createServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
-    res.on('close', () => transport.close());
+    res.on('close', () => {
+      void transport.close();
+      void server.close();
+    });
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   });
@@ -80,10 +67,7 @@ async function runHttp(): Promise<void> {
 
 const transport = process.env.TRANSPORT ?? 'stdio';
 if (transport === 'http') {
-  runHttp().catch((err: unknown) => {
-    console.error('Server error:', err);
-    process.exit(1);
-  });
+  runHttp();
 } else {
   runStdio().catch((err: unknown) => {
     console.error('Server error:', err);
