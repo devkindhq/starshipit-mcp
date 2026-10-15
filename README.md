@@ -66,9 +66,11 @@ claude mcp add starshipit -e STARSHIPIT_API_KEY=... -e STARSHIPIT_SUBSCRIPTION_K
 TRANSPORT=http PORT=3000 STARSHIPIT_API_KEY=... STARSHIPIT_SUBSCRIPTION_KEY=... npx -y @devkind/starshipit-mcp
 ```
 
-The endpoint is `http://localhost:3000/mcp` (stateless Streamable HTTP), and `GET /health` returns the status and version.
+The endpoint is `http://127.0.0.1:3000/mcp` (stateless Streamable HTTP), and `GET /health` returns the status and version.
 
-> **Warning:** HTTP mode has no authentication, and it uses the server's own StarShipIt keys for every request. Do not expose the port to a network you do not trust.
+By default the server listens on `127.0.0.1` only, and rejects requests whose `Host` header is not `localhost`, `127.0.0.1` or `::1` (protection against DNS rebinding from a web page). Set `MCP_HOST=0.0.0.0` to listen on all interfaces, for example in a container.
+
+> **Warning:** HTTP mode has no authentication, and it uses the server's own StarShipIt keys for every request. With `MCP_HOST=0.0.0.0`, put an authenticating proxy in front of it.
 
 ## Development
 

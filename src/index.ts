@@ -2,7 +2,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import express from 'express';
+import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
 import { createRequire } from 'node:module';
 
 import { registerOrderTools } from './tools/orders.js';
@@ -41,8 +41,9 @@ async function runStdio(): Promise<void> {
 }
 
 function runHttp(): void {
-  const app = express();
-  app.use(express.json());
+  // Local only by default; the SDK then rejects other Host headers (DNS rebinding).
+  const host = process.env.MCP_HOST ?? '127.0.0.1';
+  const app = createMcpExpressApp({ host });
 
   // Stateless mode: one server per request, because a server holds only one transport.
   app.post('/mcp', async (req, res) => {
@@ -64,8 +65,13 @@ function runHttp(): void {
   });
 
   const port = parseInt(process.env.PORT ?? '3000', 10);
-  app.listen(port, () => {
-    console.error(`StarShipIt MCP server running on http://localhost:${port}/mcp`);
+  // Express 5 passes listen errors (e.g. EADDRINUSE) to this callback.
+  app.listen(port, host, (err?: Error) => {
+    if (err) {
+      console.error('Server error:', err);
+      process.exit(1);
+    }
+    console.error(`StarShipIt MCP server running on http://${host}:${port}/mcp`);
   });
 }
 

@@ -24,7 +24,6 @@ This document is the authoritative technical reference for the `starshipit-mcp` 
 - **Key Dependencies:**
   - `@modelcontextprotocol/sdk` (`^1.32.1`): Core MCP server SDK (`McpServer`, `StdioServerTransport`, `StreamableHTTPServerTransport`).
   - `axios` (`^1.20.0`): HTTP client for the Starshipit REST API.
-  - `express` (`^5.3.0`): HTTP transport only.
   - `zod` (`^3.25.76`): Schema definition and runtime validation for MCP tool inputs.
 - **Version:** read at runtime from `package.json` (`src/index.ts`); no version constant in `src`. semantic-release sets it in CI at release time.
 
@@ -37,10 +36,10 @@ The server supports two mutually exclusive runtime transports, selected via `pro
    - **Critical Rule:** Standard output (`stdout`) is strictly reserved for JSON-RPC MCP framing. All logging, diagnostics, and errors MUST be routed to `console.error` (`stderr`).
 2. **HTTP / SSE Transport (`TRANSPORT=http`):**
    - Implemented via `runHttp()` (`src/index.ts:43-70`).
-   - Runs an Express application listening on `process.env.PORT` (default: `3000`).
+   - Runs the SDK's `createMcpExpressApp({ host })` on `process.env.MCP_HOST` (default `127.0.0.1`) and `process.env.PORT` (default `3000`). For a localhost host the SDK rejects other `Host` headers with 403 (DNS rebinding protection); `MCP_HOST=0.0.0.0` disables that and the SDK prints a warning.
    - Endpoint `POST /mcp`: Stateless. Each request creates its own `McpServer` and `StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })`, and closes both when the response closes. An `McpServer` holds only one transport, so a shared server fails parallel requests with "Already connected to a transport".
    - Endpoint `GET /health`: Returns `{ status: 'ok', server: 'starshipit-mcp', version }`.
-   - **Security:** no authentication, and `app.listen(port)` binds all interfaces. Every request uses the server's own StarShipIt keys.
+   - **Security:** no authentication. Every request uses the server's own StarShipIt keys, so a non-local `MCP_HOST` needs an authenticating proxy.
 
 ### 1.4 Packaging & Release
 - **npm package:** `@devkind/starshipit-mcp`, public. `files` ships only `dist/`.
@@ -58,6 +57,7 @@ The server requires two distinct API credentials issued by Starshipit:
 - `STARSHIPIT_SUBSCRIPTION_KEY`: Azure API Management subscription key (configured in Starshipit under **Settings → API → Subscription key**).
 - Optional variables:
   - `TRANSPORT`: `'stdio'` | `'http'` (default `'stdio'`)
+  - `MCP_HOST`: HTTP bind address (default `'127.0.0.1'`)
   - `PORT`: HTTP port number (default `'3000'`)
 
 There is no startup validation: the server starts and lists its tools without keys (registries and `sync-tools` need this). Each API call reads the keys in `src/services/api-client.ts:4-14` and throws `"<NAME> environment variable is not set"` when one is missing; the tool returns that text with `isError: true`.
