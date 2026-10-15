@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
+import { createRequire } from 'node:module';
 
 import { registerOrderTools } from './tools/orders.js';
 import { registerShipmentTools } from './tools/shipments.js';
@@ -12,10 +13,13 @@ import { registerAddressBookTools } from './tools/address-book.js';
 import { registerManifestTools } from './tools/manifests.js';
 import { registerProductTools } from './tools/products.js';
 
+// package.json is the single source of the version; releases set it in CI.
+const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
+
 function createServer(): McpServer {
   const server = new McpServer({
-    name: 'starshipit-mcp-server',
-    version: '1.0.0',
+    name: 'starshipit-mcp',
+    version,
   });
 
   registerOrderTools(server);
@@ -56,7 +60,7 @@ function runHttp(): void {
   });
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', server: 'starshipit-mcp-server' });
+    res.json({ status: 'ok', server: 'starshipit-mcp', version });
   });
 
   const port = parseInt(process.env.PORT ?? '3000', 10);

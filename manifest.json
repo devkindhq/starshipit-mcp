@@ -1,0 +1,222 @@
+{
+	"manifest_version": "0.3",
+	"name": "starshipit-mcp",
+	"display_name": "StarShipIt MCP",
+	"version": "1.0.0",
+	"description": "Manage StarShipIt orders, shipments, labels, tracking, rates, manifests, address book and products",
+	"author": {
+		"name": "Devkind",
+		"url": "https://devkind.com.au"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/devkindhq/starshipit-mcp"
+	},
+	"homepage": "https://github.com/devkindhq/starshipit-mcp#readme",
+	"icon": "assets/icon.png",
+	"license": "ISC",
+	"keywords": [
+		"mcp",
+		"starshipit",
+		"shipping",
+		"logistics",
+		"ecommerce"
+	],
+	"server": {
+		"type": "node",
+		"entry_point": "dist/index.js",
+		"mcp_config": {
+			"command": "node",
+			"args": [
+				"${__dirname}/dist/index.js"
+			],
+			"env": {
+				"STARSHIPIT_API_KEY": "${user_config.starshipit_api_key}",
+				"STARSHIPIT_SUBSCRIPTION_KEY": "${user_config.starshipit_subscription_key}"
+			}
+		}
+	},
+	"compatibility": {
+		"runtimes": {
+			"node": ">=22"
+		}
+	},
+	"user_config": {
+		"starshipit_api_key": {
+			"type": "string",
+			"title": "StarShipIt API Key",
+			"description": "StarShipIt: Settings > API > API Key",
+			"required": true,
+			"sensitive": true
+		},
+		"starshipit_subscription_key": {
+			"type": "string",
+			"title": "StarShipIt Subscription Key",
+			"description": "StarShipIt: Settings > API > Subscription key",
+			"required": true,
+			"sensitive": true
+		}
+	},
+	"tools": [
+		{
+			"name": "starshipit_list_unshipped_orders",
+			"description": "List unshipped orders from StarShipIt. Returns orders that have been imported but not yet shipped."
+		},
+		{
+			"name": "starshipit_list_printed_orders",
+			"description": "List printed (label generated) orders from StarShipIt. Use this to review orders where labels have been printed but may not yet be manifested."
+		},
+		{
+			"name": "starshipit_list_shipped_orders",
+			"description": "List shipped orders from StarShipIt. Returns orders that have been manifested and dispatched to the carrier."
+		},
+		{
+			"name": "starshipit_list_delivered_orders",
+			"description": "List delivered orders from StarShipIt. Returns orders where the carrier has confirmed delivery."
+		},
+		{
+			"name": "starshipit_get_orders_summary",
+			"description": "Get a summary of orders filtered by status from StarShipIt. Useful for dashboards and reporting."
+		},
+		{
+			"name": "starshipit_search_orders",
+			"description": "Search orders in StarShipIt by a free-text phrase. Searches across order numbers, references, recipient names, tracking numbers, and other indexed fields."
+		},
+		{
+			"name": "starshipit_get_order",
+			"description": "Retrieve a single order from StarShipIt by its internal ID or merchant order number. At least one of `order_id` or `order_number` must be supplied."
+		},
+		{
+			"name": "starshipit_create_order",
+			"description": "Create a new order in StarShipIt. The order will appear in the unshipped queue ready for label generation."
+		},
+		{
+			"name": "starshipit_create_orders_bulk",
+			"description": "Import multiple orders into StarShipIt in a single API call. Use this for batch fulfilment import from external systems."
+		},
+		{
+			"name": "starshipit_update_order",
+			"description": "Update an existing unshipped order in StarShipIt. Only fields provided in the payload will be updated; others remain unchanged (partial patch semantics)."
+		},
+		{
+			"name": "starshipit_update_orders_bulk",
+			"description": "Update multiple existing orders in StarShipIt in a single API call. Each entry must include `order_id`; other fields are optional partial updates."
+		},
+		{
+			"name": "starshipit_batch_update_orders",
+			"description": "Apply the same carrier or shipping service product to a batch of orders in StarShipIt. Use this to reassign carrier/service for multiple orders in a single call."
+		},
+		{
+			"name": "starshipit_delete_order",
+			"description": "Permanently delete an order from StarShipIt. This action is irreversible — the order will be removed from the system entirely."
+		},
+		{
+			"name": "starshipit_archive_order",
+			"description": "Archive an order in StarShipIt. Archived orders are hidden from the main fulfilment queue but remain in the system and can be restored at any time."
+		},
+		{
+			"name": "starshipit_restore_order",
+			"description": "Restore a previously archived order in StarShipIt, returning it to the active fulfilment queue."
+		},
+		{
+			"name": "starshipit_merge_orders",
+			"description": "Merge one or more child orders into a parent order in StarShipIt. After merging, the child orders are absorbed into the parent and the combined shipment will be dispatched as a single package."
+		},
+		{
+			"name": "starshipit_get_suggested_merges",
+			"description": "Get a list of orders that StarShipIt suggests can be merged — typically orders from the same customer with the same destination address. Use this before calling `starshipit_merge_orders` to identify candidates."
+		},
+		{
+			"name": "starshipit_assign_orders",
+			"description": "Reassign orders between StarShipIt accounts using API keys. Use this to move orders from one StarShipIt sub-account or warehouse account to another."
+		},
+		{
+			"name": "starshipit_print_label",
+			"description": "Print (or reprint) a shipping label for a single order in StarShipIt."
+		},
+		{
+			"name": "starshipit_print_labels",
+			"description": "Print shipping labels for multiple orders at once in StarShipIt."
+		},
+		{
+			"name": "starshipit_print_packing_slips",
+			"description": "Generate packing slip documents for one or more orders in StarShipIt."
+		},
+		{
+			"name": "starshipit_manifest_shipment",
+			"description": "Manifest (finalise/close) shipments by order IDs in StarShipIt."
+		},
+		{
+			"name": "starshipit_clone_shipment",
+			"description": "Clone an existing shipment in StarShipIt, optionally converting it to a return shipment."
+		},
+		{
+			"name": "starshipit_replace_shipment",
+			"description": "Replace an existing shipment in StarShipIt — voids the previous label and creates a new one."
+		},
+		{
+			"name": "starshipit_track_shipment",
+			"description": "Track a shipment by tracking number using StarShipIt."
+		},
+		{
+			"name": "starshipit_create_tracking_order",
+			"description": "Create tracking-only orders in StarShipIt for shipments dispatched outside the platform."
+		},
+		{
+			"name": "starshipit_get_rates",
+			"description": "Get available shipping rates (quotes) for a shipment between a sender and destination address with the given package dimensions."
+		},
+		{
+			"name": "starshipit_get_delivery_services",
+			"description": "Get available delivery services (carrier + service options) for a specific order or a general route. Returns service codes that are directly usable when creating or updating orders."
+		},
+		{
+			"name": "starshipit_list_addresses",
+			"description": "List saved addresses from the StarShipIt address book, with optional text filtering and pagination."
+		},
+		{
+			"name": "starshipit_add_address",
+			"description": "Add a new address entry to the StarShipIt address book for reuse in future orders."
+		},
+		{
+			"name": "starshipit_update_address",
+			"description": "Update an existing address book entry by its ID."
+		},
+		{
+			"name": "starshipit_delete_addresses",
+			"description": "Delete one or more addresses from the StarShipIt address book by their IDs. This action is permanent and cannot be undone."
+		},
+		{
+			"name": "starshipit_list_manifests",
+			"description": "List all manifests in your StarShipIt account."
+		},
+		{
+			"name": "starshipit_get_manifest_files",
+			"description": "Retrieve manifest file URLs for downloading manifest documents (PDFs, etc.)."
+		},
+		{
+			"name": "starshipit_manifest_by_tracking",
+			"description": "Manifest (close/submit) specific shipments to the carrier by their tracking numbers or order numbers."
+		},
+		{
+			"name": "starshipit_manifest_by_carrier",
+			"description": "Manifest ALL unmanifested shipments for a specific carrier in one operation."
+		},
+		{
+			"name": "starshipit_list_products",
+			"description": "List or search products in the StarShipIt product catalogue."
+		},
+		{
+			"name": "starshipit_add_product",
+			"description": "Add a new product to the StarShipIt product catalogue."
+		},
+		{
+			"name": "starshipit_update_product",
+			"description": "Update an existing product in the StarShipIt product catalogue by its numeric ID."
+		},
+		{
+			"name": "starshipit_delete_products",
+			"description": "Delete one or more products from the StarShipIt product catalogue. This operation is irreversible."
+		}
+	]
+}
