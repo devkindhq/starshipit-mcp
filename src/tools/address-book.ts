@@ -5,6 +5,8 @@ import {
   ResponseFormat,
   ResponseFormatSchema,
   truncateIfNeeded,
+  ApiResultSchema,
+  toStructured,
 } from '../schemas/common.js';
 import type { Address } from '../types.js';
 import { CHARACTER_LIMIT } from '../constants.js';
@@ -174,6 +176,7 @@ export function registerAddressBookTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -218,6 +221,7 @@ export function registerAddressBookTools(server: McpServer): void {
         }
 
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
         };
       } catch (error) {
@@ -284,6 +288,7 @@ export function registerAddressBookTools(server: McpServer): void {
           address: AddressBookEntrySchema.describe('The address details to save'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -300,6 +305,7 @@ export function registerAddressBookTools(server: McpServer): void {
         const addr = data.address;
         if (!addr) {
           return {
+            structuredContent: toStructured(data),
             content: [
               {
                 type: 'text',
@@ -311,6 +317,7 @@ export function registerAddressBookTools(server: McpServer): void {
 
         const output = `Address added successfully.\n\n${formatAddressMarkdown(addr)}`;
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
         };
       } catch (error) {
@@ -377,6 +384,7 @@ export function registerAddressBookTools(server: McpServer): void {
           address: AddressBookEntrySchema.describe('Replacement address data'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -394,6 +402,7 @@ export function registerAddressBookTools(server: McpServer): void {
         const addr = data.address;
         if (!addr) {
           return {
+            structuredContent: toStructured(data),
             content: [
               {
                 type: 'text',
@@ -405,6 +414,7 @@ export function registerAddressBookTools(server: McpServer): void {
 
         const output = `Address ${args.id} updated successfully.\n\n${formatAddressMarkdown(addr)}`;
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
         };
       } catch (error) {
@@ -450,6 +460,7 @@ export function registerAddressBookTools(server: McpServer): void {
             .describe('Array of address book IDs to permanently delete'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -481,6 +492,7 @@ export function registerAddressBookTools(server: McpServer): void {
         }
 
         return {
+          structuredContent: toStructured(data),
           content: [
             {
               type: 'text',

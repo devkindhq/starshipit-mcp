@@ -17,10 +17,18 @@ import { registerProductTools } from './tools/products.js';
 const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
 
 function createServer(): McpServer {
-  const server = new McpServer({
-    name: 'starshipit-mcp',
-    version,
-  });
+  const server = new McpServer(
+    { name: 'starshipit-mcp', version },
+    {
+      instructions: `Tools for the StarShipIt shipping API. Typical flow:
+1. starshipit_create_order (or starshipit_create_orders_bulk) adds orders; starshipit_list_unshipped_orders reviews them.
+2. starshipit_get_delivery_services (for an order_id) or starshipit_get_rates (for a route) returns service codes and prices.
+3. starshipit_print_label generates a label; pass reprint: true if the order already has one.
+4. starshipit_manifest_shipment or starshipit_manifest_by_carrier sends shipments to the carrier.
+5. starshipit_track_shipment tracks a shipment.
+Notes: delete tools are permanent; archive is reversible with starshipit_restore_order. Text output is capped at 25,000 characters; the full API response is in structuredContent.`,
+    },
+  );
 
   registerOrderTools(server);
   registerShipmentTools(server);

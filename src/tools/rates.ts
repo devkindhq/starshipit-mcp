@@ -6,6 +6,8 @@ import {
   ResponseFormatSchema,
   PackageSchema,
   truncateIfNeeded,
+  ApiResultSchema,
+  toStructured,
 } from '../schemas/common.js';
 import type { Rate } from '../types.js';
 import { CHARACTER_LIMIT } from '../constants.js';
@@ -112,6 +114,7 @@ export function registerRatesTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -138,6 +141,7 @@ export function registerRatesTools(server: McpServer): void {
         }
 
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
         };
       } catch (error) {
@@ -218,6 +222,7 @@ export function registerRatesTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -252,6 +257,7 @@ export function registerRatesTools(server: McpServer): void {
         }
 
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
         };
       } catch (error) {

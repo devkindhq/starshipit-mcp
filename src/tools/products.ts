@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiRequest, handleApiError } from '../services/api-client.js';
-import { ResponseFormat, ResponseFormatSchema, truncateIfNeeded } from '../schemas/common.js';
+import { ResponseFormat, ResponseFormatSchema, truncateIfNeeded, ApiResultSchema, toStructured } from '../schemas/common.js';
 import type { Product } from '../types.js';
 import { CHARACTER_LIMIT } from '../constants.js';
 
@@ -330,6 +330,7 @@ Products are pre-configured items used to auto-populate order line items when cr
           .describe('Sort direction: Ascending or Descending (default: Ascending)'),
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -358,6 +359,7 @@ Products are pre-configured items used to auto-populate order line items when cr
 
         const formatted = formatProductList(data, response_format ?? ResponseFormat.MARKDOWN);
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {
@@ -406,6 +408,7 @@ Products in the catalogue are used to auto-populate line item details (weight, d
         product: ProductFieldsSchema.describe('Product data to create'),
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -419,6 +422,7 @@ Products in the catalogue are used to auto-populate line item details (weight, d
 
         const formatted = formatProduct(data, 'Added', response_format ?? ResponseFormat.MARKDOWN);
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {
@@ -476,6 +480,7 @@ Use this to correct product details, update dimensions/weights, add customs code
         }).describe('Full product object including id, sku, title, and any fields to update'),
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -496,6 +501,7 @@ Use this to correct product details, update dimensions/weights, add customs code
           response_format ?? ResponseFormat.MARKDOWN,
         );
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {
@@ -551,6 +557,7 @@ Use this to correct product details, update dimensions/weights, add customs code
           ),
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -567,6 +574,7 @@ Use this to correct product details, update dimensions/weights, add customs code
 
         const formatted = formatDeleteResult(data, response_format ?? ResponseFormat.MARKDOWN);
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {

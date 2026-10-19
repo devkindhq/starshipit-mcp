@@ -5,6 +5,8 @@ import {
   ResponseFormat,
   ResponseFormatSchema,
   truncateIfNeeded,
+  ApiResultSchema,
+  toStructured,
 } from '../schemas/common.js';
 import { CHARACTER_LIMIT } from '../constants.js';
 
@@ -174,6 +176,7 @@ export function registerTrackingTools(server: McpServer): void {
 
 **Error cases:** 404 if the tracking number is not found in StarShipIt; 400 if the tracking number format is invalid.`,
       inputSchema: TrackShipmentSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -200,7 +203,7 @@ export function registerTrackingTools(server: McpServer): void {
         }
 
         text = truncateIfNeeded(text, CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
       } catch (error) {
         return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
       }
@@ -250,6 +253,7 @@ export function registerTrackingTools(server: McpServer): void {
 
 **Error cases:** 400 if carrier or tracking_number is missing for any entry; 409 if a tracking number already exists in the platform.`,
       inputSchema: CreateTrackingOrderSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -278,7 +282,7 @@ export function registerTrackingTools(server: McpServer): void {
         );
 
         const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
       } catch (error) {
         return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
       }

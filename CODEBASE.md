@@ -75,7 +75,9 @@ The API client is implemented as a functional module centered around `apiRequest
 - **Query Parameter Sanitization (`src/services/api-client.ts:35-41`):**
   Strips all parameters where value is `undefined`, `null`, or `""` (empty string). Preserves `0` and `false`. This prevents Starshipit gateway `400 Bad Request` rejections caused by empty query keys.
 - **Output Truncation Guard (`src/constants.ts:2`, `src/schemas/common.ts:62-66`):**
-  All tool outputs are capped at `CHARACTER_LIMIT = 25000` via `truncateIfNeeded(text, 25000)`. If output exceeds 25,000 characters, it is truncated and appended with pagination instructions to preserve LLM context windows.
+  The text output of every tool is capped at `CHARACTER_LIMIT = 25000` via `truncateIfNeeded(text, 25000)`. If it exceeds 25,000 characters, it is truncated and appended with pagination instructions to preserve LLM context windows.
+- **Structured output (`src/schemas/common.ts`):** every tool declares `outputSchema: ApiResultSchema` (named `success`/`errors`/`object` fields, everything else passed through) and every success result carries the raw, untruncated API response as `structuredContent` via `toStructured()`, which wraps non-object values as `{ object }`. The SDK rejects a success result without `structuredContent` once a tool has an `outputSchema`, so new tools must follow the same pattern. Error results (`isError: true`) skip that check.
+- **Server instructions (`src/index.ts`):** a short workflow guide (create order, choose a service, print label, manifest, track) sent to clients at `initialize`.
 
 ### 2.3 Status Code Mapping & Error Protocol
 Errors are formatted via `handleApiError(error)` (`src/services/api-client.ts:47-87`):

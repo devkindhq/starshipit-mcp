@@ -11,7 +11,7 @@ Built by [Devkind](https://devkind.com.au).
 
 - **40 tools** across orders, shipments, tracking, rates, address book, manifests and products
 - **Tool annotations**: every tool declares MCP annotations. 15 tools are read-only and 5 are marked destructive, so clients can ask before they change data
-- **Markdown or JSON output** on list and lookup tools
+- **Markdown or JSON output** on list and lookup tools, plus the full API response as structured content on every tool
 - **stdio and HTTP transports**. HTTP mode listens on `127.0.0.1` by default and rejects foreign `Host` headers
 - **Runs with npx**. No clone or global install. Needs Node.js 22 or later
 

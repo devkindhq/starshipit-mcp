@@ -9,6 +9,8 @@ import {
   PackageSchema,
   OrderItemSchema,
   truncateIfNeeded,
+  ApiResultSchema,
+  toStructured,
 } from '../schemas/common.js';
 import type { Order } from '../types.js';
 import { CHARACTER_LIMIT } from '../constants.js';
@@ -198,6 +200,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -230,7 +233,7 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -279,6 +282,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -312,7 +316,7 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -352,6 +356,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -379,7 +384,7 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -412,6 +417,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -439,7 +445,7 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -485,6 +491,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -512,7 +519,7 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -551,6 +558,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -578,7 +586,7 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -631,6 +639,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -677,7 +686,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           text = '## Order Details\n\n' + formatOrdersAsMarkdown([order]);
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -714,6 +723,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           order: CreateOrderPayloadSchema.describe('Order data to create'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -734,7 +744,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           ? `Order created successfully.\n\n**Order ID:** ${created.order_id}\n**Order Number:** ${created.order_number}`
           : `Order creation request submitted.${result.success === false ? ' The API reported a failure — verify the order in StarShipIt.' : ''}`;
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -767,6 +777,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
             ),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -801,6 +812,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
         }
 
         return {
+          structuredContent: toStructured(result),
           content: [
             { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
           ],
@@ -835,6 +847,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           ),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -855,7 +868,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           ? `Order ${updated.order_id} updated successfully.\n**Order Number:** ${updated.order_number ?? '(unchanged)'}`
           : `Update request for order ${order.order_id} submitted.`;
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -888,6 +901,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
             ),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -919,6 +933,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
         }
 
         return {
+          structuredContent: toStructured(result),
           content: [
             { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
           ],
@@ -967,6 +982,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('Carrier identifier to assign to all specified orders'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -992,6 +1008,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
         }
 
         return {
+          structuredContent: toStructured(result),
           content: [
             { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
           ],
@@ -1029,6 +1046,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('StarShipIt internal order ID to permanently delete'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -1038,9 +1056,10 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
     },
     async ({ order_id }) => {
       try {
-        await apiRequest<{ success?: boolean }>('orders/delete', 'DELETE', { order_id });
+        const result = await apiRequest<{ success?: boolean }>('orders/delete', 'DELETE', { order_id });
 
         return {
+          structuredContent: toStructured(result),
           content: [
             { type: 'text', text: `Order ${order_id} has been permanently deleted.` },
           ],
@@ -1076,6 +1095,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('StarShipIt internal order ID to archive'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -1085,9 +1105,10 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
     },
     async ({ order_id }) => {
       try {
-        await apiRequest<{ success?: boolean }>('orders/archive', 'POST', { order_id });
+        const result = await apiRequest<{ success?: boolean }>('orders/archive', 'POST', { order_id });
 
         return {
+          structuredContent: toStructured(result),
           content: [
             {
               type: 'text',
@@ -1126,6 +1147,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('StarShipIt internal order ID to restore from archive'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -1135,9 +1157,10 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
     },
     async ({ order_id }) => {
       try {
-        await apiRequest<{ success?: boolean }>('orders/restore', 'POST', { order_id });
+        const result = await apiRequest<{ success?: boolean }>('orders/restore', 'POST', { order_id });
 
         return {
+          structuredContent: toStructured(result),
           content: [
             {
               type: 'text',
@@ -1183,6 +1206,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('Array of order IDs to merge into the parent order'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -1203,7 +1227,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           ? `Orders merged successfully.\n\n**Parent Order ID:** ${merged.order_id}\n**Order Number:** ${merged.order_number}\n**Child orders merged:** ${child_order_ids.join(', ')}`
           : `Merge of orders ${child_order_ids.join(', ')} into parent ${parent_order_id} submitted.`;
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -1235,6 +1259,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -1296,7 +1321,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           }
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }], structuredContent: toStructured(result) };
       } catch (err) {
         return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
       }
@@ -1348,6 +1373,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('Array of order assignment instructions'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -1373,6 +1399,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
         }
 
         return {
+          structuredContent: toStructured(result),
           content: [
             { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
           ],

@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiRequest, handleApiError } from '../services/api-client.js';
-import { ResponseFormat, ResponseFormatSchema, PaginationSchema, truncateIfNeeded } from '../schemas/common.js';
+import { ResponseFormat, ResponseFormatSchema, PaginationSchema, truncateIfNeeded, ApiResultSchema, toStructured } from '../schemas/common.js';
 import type { Manifest } from '../types.js';
 import { CHARACTER_LIMIT } from '../constants.js';
 
@@ -94,7 +94,7 @@ function formatManifestFiles(data: GetManifestFilesResponse, format: ResponseFor
     if (f.file_data) {
       const bytes = Math.round((f.file_data.length * 3) / 4);
       const size = bytes < 1024 ? `${bytes} bytes` : `~${Math.round(bytes / 1024)} KB`;
-      lines.push(`- **Size:** ${size} (base64 content in the JSON format; output over ${CHARACTER_LIMIT} characters is truncated)`);
+      lines.push(`- **Size:** ${size} (full base64 content in structuredContent)`);
     }
     lines.push('');
   }
@@ -170,6 +170,7 @@ Manifests group shipments that have been closed/submitted to a carrier. A manife
         page: PaginationSchema.shape.page,
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -186,6 +187,7 @@ Manifests group shipments that have been closed/submitted to a carrier. A manife
 
         const formatted = formatManifestList(data, response_format ?? ResponseFormat.MARKDOWN, page ?? 1);
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {
@@ -203,7 +205,7 @@ Manifests group shipments that have been closed/submitted to a carrier. A manife
       title: 'Get Manifest Files',
       description: `Retrieve manifest documents (PDF, XML, etc.) as base64 file content.
 
-Each manifest can have one or more associated document files that you submit to the carrier at pickup. The markdown format lists file names and sizes; the JSON format includes the base64 content, truncated if the output exceeds 25000 characters.
+Each manifest can have one or more associated document files that you submit to the carrier at pickup. The markdown format lists file names and sizes. The full base64 content is always in structuredContent; the JSON text output is capped at 25000 characters.
 
 **Query parameters:**
 - \`manifest_id\` (optional): Filter to files for a specific manifest. Omit to list files across all manifests.
@@ -234,6 +236,7 @@ Each manifest can have one or more associated document files that you submit to 
         page: PaginationSchema.shape.page,
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -252,6 +255,7 @@ Each manifest can have one or more associated document files that you submit to 
 
         const formatted = formatManifestFiles(data, response_format ?? ResponseFormat.MARKDOWN, page ?? 1);
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {
@@ -306,6 +310,7 @@ This closes the selected shipments and submits them to the carrier, creating a m
           ),
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -328,6 +333,7 @@ This closes the selected shipments and submits them to the carrier, creating a m
 
         const formatted = formatManifestResult(data, response_format ?? ResponseFormat.MARKDOWN);
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {
@@ -378,6 +384,7 @@ This is a bulk operation that closes every shipment that is ready-to-manifest fo
           ),
         response_format: ResponseFormatSchema,
       }),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -393,6 +400,7 @@ This is a bulk operation that closes every shipment that is ready-to-manifest fo
 
         const formatted = formatManifestResult(data, response_format ?? ResponseFormat.MARKDOWN);
         return {
+          structuredContent: toStructured(data),
           content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
         };
       } catch (error: unknown) {
