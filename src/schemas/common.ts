@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CHARACTER_LIMIT } from '../constants.js';
 
 export enum ResponseFormat {
   MARKDOWN = 'markdown',
@@ -77,9 +78,22 @@ export const ApiResultSchema = z
   .passthrough()
   .describe('Raw StarShipIt API response; not truncated');
 
-/** structuredContent must be an object, so wrap anything else. */
-export function toStructured(data: unknown): Record<string, unknown> {
-  return typeof data === 'object' && data !== null && !Array.isArray(data)
-    ? (data as Record<string, unknown>)
-    : { object: data };
+/**
+ * Success result for every tool: the text (capped at CHARACTER_LIMIT) for the model, and the
+ * full API response as structuredContent, which must be an object, so anything else is wrapped.
+ */
+export function toolResult(text: string, data: unknown) {
+  const structured =
+    typeof data === 'object' && data !== null && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : { object: data };
+  return {
+    content: [{ type: 'text' as const, text: truncateIfNeeded(text, CHARACTER_LIMIT) }],
+    structuredContent: structured,
+  };
+}
+
+/** Error result for every tool; clients and models treat isError results as failed calls. */
+export function toolError(text: string) {
+  return { content: [{ type: 'text' as const, text }], isError: true };
 }

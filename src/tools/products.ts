@@ -1,9 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiRequest, handleApiError } from '../services/api-client.js';
-import { ResponseFormat, ResponseFormatSchema, truncateIfNeeded, ApiResultSchema, toStructured } from '../schemas/common.js';
+import { ResponseFormat, ResponseFormatSchema, ApiResultSchema, toolResult, toolError } from '../schemas/common.js';
 import type { Product } from '../types.js';
-import { CHARACTER_LIMIT } from '../constants.js';
 
 // ---------------------------------------------------------------------------
 // Shared product field schema (reused for add and update)
@@ -358,12 +357,9 @@ Products are pre-configured items used to auto-populate order line items when cr
         });
 
         const formatted = formatProductList(data, response_format ?? ResponseFormat.MARKDOWN);
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -421,12 +417,9 @@ Products in the catalogue are used to auto-populate line item details (weight, d
         const data = await apiRequest<AddProductResponse>('products', 'POST', { product });
 
         const formatted = formatProduct(data, 'Added', response_format ?? ResponseFormat.MARKDOWN);
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -500,12 +493,9 @@ Use this to correct product details, update dimensions/weights, add customs code
           'Updated',
           response_format ?? ResponseFormat.MARKDOWN,
         );
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -573,12 +563,9 @@ Use this to correct product details, update dimensions/weights, add customs code
         const data = await apiRequest<DeleteProductsResponse>('products/delete', 'DELETE', body);
 
         const formatted = formatDeleteResult(data, response_format ?? ResponseFormat.MARKDOWN);
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );

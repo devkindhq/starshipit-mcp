@@ -5,12 +5,11 @@ import {
   ResponseFormat,
   ResponseFormatSchema,
   PackageSchema,
-  truncateIfNeeded,
   ApiResultSchema,
-  toStructured,
+  toolResult,
+  toolError,
 } from '../schemas/common.js';
 import type { Rate } from '../types.js';
-import { CHARACTER_LIMIT } from '../constants.js';
 
 // ─── Shared schemas ────────────────────────────────────────────────────────────
 
@@ -140,15 +139,9 @@ export function registerRatesTools(server: McpServer): void {
           output = formatRatesMarkdown(rates);
         }
 
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
-        };
+        return toolResult(output, data);
       } catch (error) {
-        return {
-          content: [{ type: 'text', text: handleApiError(error) }],
-          isError: true,
-        };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -256,15 +249,9 @@ export function registerRatesTools(server: McpServer): void {
           );
         }
 
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
-        };
+        return toolResult(output, data);
       } catch (error) {
-        return {
-          content: [{ type: 'text', text: handleApiError(error) }],
-          isError: true,
-        };
+        return toolError(handleApiError(error));
       }
     },
   );

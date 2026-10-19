@@ -1,9 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiRequest, handleApiError } from '../services/api-client.js';
-import { ResponseFormat, ResponseFormatSchema, PaginationSchema, truncateIfNeeded, ApiResultSchema, toStructured } from '../schemas/common.js';
+import { ResponseFormat, ResponseFormatSchema, PaginationSchema, ApiResultSchema, toolResult, toolError } from '../schemas/common.js';
 import type { Manifest } from '../types.js';
-import { CHARACTER_LIMIT } from '../constants.js';
 
 // ---------------------------------------------------------------------------
 // Response shapes returned by the StarShipIt manifests endpoints
@@ -186,12 +185,9 @@ Manifests group shipments that have been closed/submitted to a carrier. A manife
         });
 
         const formatted = formatManifestList(data, response_format ?? ResponseFormat.MARKDOWN, page ?? 1);
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -254,12 +250,9 @@ Each manifest can have one or more associated document files that you submit to 
         );
 
         const formatted = formatManifestFiles(data, response_format ?? ResponseFormat.MARKDOWN, page ?? 1);
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -332,12 +325,9 @@ This closes the selected shipments and submits them to the carrier, creating a m
         );
 
         const formatted = formatManifestResult(data, response_format ?? ResponseFormat.MARKDOWN);
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -399,12 +389,9 @@ This is a bulk operation that closes every shipment that is ready-to-manifest fo
         });
 
         const formatted = formatManifestResult(data, response_format ?? ResponseFormat.MARKDOWN);
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(formatted, CHARACTER_LIMIT) }],
-        };
+        return toolResult(formatted, data);
       } catch (error: unknown) {
-        return { content: [{ type: 'text', text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );

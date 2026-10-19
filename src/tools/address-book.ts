@@ -4,12 +4,11 @@ import { apiRequest, handleApiError } from '../services/api-client.js';
 import {
   ResponseFormat,
   ResponseFormatSchema,
-  truncateIfNeeded,
   ApiResultSchema,
-  toStructured,
+  toolResult,
+  toolError,
 } from '../schemas/common.js';
 import type { Address } from '../types.js';
-import { CHARACTER_LIMIT } from '../constants.js';
 
 // ─── Address schema for address book entries ───────────────────────────────────
 //
@@ -220,15 +219,9 @@ export function registerAddressBookTools(server: McpServer): void {
           output = formatAddressListMarkdown(addresses, args.page, data.total_records);
         }
 
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
-        };
+        return toolResult(output, data);
       } catch (error) {
-        return {
-          content: [{ type: 'text', text: handleApiError(error) }],
-          isError: true,
-        };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -304,27 +297,13 @@ export function registerAddressBookTools(server: McpServer): void {
 
         const addr = data.address;
         if (!addr) {
-          return {
-            structuredContent: toStructured(data),
-            content: [
-              {
-                type: 'text',
-                text: 'Address created but no address data was returned in the response.',
-              },
-            ],
-          };
+          return toolResult('Address created but no address data was returned in the response.', data);
         }
 
         const output = `Address added successfully.\n\n${formatAddressMarkdown(addr)}`;
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
-        };
+        return toolResult(output, data);
       } catch (error) {
-        return {
-          content: [{ type: 'text', text: handleApiError(error) }],
-          isError: true,
-        };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -401,27 +380,13 @@ export function registerAddressBookTools(server: McpServer): void {
 
         const addr = data.address;
         if (!addr) {
-          return {
-            structuredContent: toStructured(data),
-            content: [
-              {
-                type: 'text',
-                text: `Address ${args.id} updated successfully (no address data returned).`,
-              },
-            ],
-          };
+          return toolResult(`Address ${args.id} updated successfully (no address data returned).`, data);
         }
 
         const output = `Address ${args.id} updated successfully.\n\n${formatAddressMarkdown(addr)}`;
-        return {
-          structuredContent: toStructured(data),
-          content: [{ type: 'text', text: truncateIfNeeded(output, CHARACTER_LIMIT) }],
-        };
+        return toolResult(output, data);
       } catch (error) {
-        return {
-          content: [{ type: 'text', text: handleApiError(error) }],
-          isError: true,
-        };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -480,31 +445,12 @@ export function registerAddressBookTools(server: McpServer): void {
         if (data.success === false) {
           const errDetail =
             data.errors !== undefined ? ` Details: ${JSON.stringify(data.errors)}` : '';
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Delete request failed for address ID(s) [${ids}].${errDetail}`,
-              },
-            ],
-            isError: true,
-          };
+          return toolError(`Delete request failed for address ID(s) [${ids}].${errDetail}`);
         }
 
-        return {
-          structuredContent: toStructured(data),
-          content: [
-            {
-              type: 'text',
-              text: `Successfully deleted ${count} address${count === 1 ? '' : 'es'} (ID${count === 1 ? '' : 's'}: ${ids}).`,
-            },
-          ],
-        };
+        return toolResult(`Successfully deleted ${count} address${count === 1 ? '' : 'es'} (ID${count === 1 ? '' : 's'}: ${ids}).`, data);
       } catch (error) {
-        return {
-          content: [{ type: 'text', text: handleApiError(error) }],
-          isError: true,
-        };
+        return toolError(handleApiError(error));
       }
     },
   );

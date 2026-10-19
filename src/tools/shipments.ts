@@ -1,8 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiRequest, handleApiError } from '../services/api-client.js';
-import { PackageSchema, truncateIfNeeded, ApiResultSchema, toStructured } from '../schemas/common.js';
-import { CHARACTER_LIMIT } from '../constants.js';
+import { PackageSchema, ApiResultSchema, toolResult, toolError } from '../schemas/common.js';
 
 // ── Response shape interfaces ────────────────────────────────────────────────
 
@@ -218,10 +217,9 @@ export function registerShipmentTools(server: McpServer): void {
           body,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -283,10 +281,9 @@ export function registerShipmentTools(server: McpServer): void {
           body,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -331,10 +328,9 @@ export function registerShipmentTools(server: McpServer): void {
           { order_ids },
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -382,10 +378,9 @@ export function registerShipmentTools(server: McpServer): void {
           { order_ids },
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -439,10 +434,9 @@ export function registerShipmentTools(server: McpServer): void {
           body,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -495,10 +489,9 @@ export function registerShipmentTools(server: McpServer): void {
           { order_id },
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );

@@ -4,11 +4,10 @@ import { apiRequest, handleApiError } from '../services/api-client.js';
 import {
   ResponseFormat,
   ResponseFormatSchema,
-  truncateIfNeeded,
   ApiResultSchema,
-  toStructured,
+  toolResult,
+  toolError,
 } from '../schemas/common.js';
-import { CHARACTER_LIMIT } from '../constants.js';
 
 // ── Response shape interfaces ────────────────────────────────────────────────
 
@@ -201,11 +200,9 @@ export function registerTrackingTools(server: McpServer): void {
         } else {
           text = formatTrackingMarkdown(result);
         }
-
-        text = truncateIfNeeded(text, CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(text, result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -281,10 +278,9 @@ export function registerTrackingTools(server: McpServer): void {
           payload,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }], structuredContent: toStructured(result) };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }], isError: true };
+        return toolError(handleApiError(error));
       }
     },
   );

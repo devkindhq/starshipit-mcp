@@ -76,7 +76,7 @@ The API client is implemented as a functional module centered around `apiRequest
   Strips all parameters where value is `undefined`, `null`, or `""` (empty string). Preserves `0` and `false`. This prevents Starshipit gateway `400 Bad Request` rejections caused by empty query keys.
 - **Output Truncation Guard (`src/constants.ts:2`, `src/schemas/common.ts:62-66`):**
   The text output of every tool is capped at `CHARACTER_LIMIT = 25000` via `truncateIfNeeded(text, 25000)`. If it exceeds 25,000 characters, it is truncated and appended with pagination instructions to preserve LLM context windows.
-- **Structured output (`src/schemas/common.ts`):** every tool declares `outputSchema: ApiResultSchema` (named `success`/`errors`/`object` fields, everything else passed through) and every success result carries the raw, untruncated API response as `structuredContent` via `toStructured()`, which wraps non-object values as `{ object }`. The SDK rejects a success result without `structuredContent` once a tool has an `outputSchema`, so new tools must follow the same pattern. Error results (`isError: true`) skip that check.
+- **Structured output (`src/schemas/common.ts`):** every tool declares `outputSchema: ApiResultSchema` (named `success`/`errors`/`object` fields, everything else passed through). Every success returns `toolResult(text, data)`: the text capped at 25,000 characters, plus the raw, untruncated API response as `structuredContent` (non-object values wrapped as `{ object }`). The SDK rejects a success result without `structuredContent` once a tool has an `outputSchema`, so new tools must return through `toolResult`.
 - **Server instructions (`src/index.ts`):** a short workflow guide (create order, choose a service, print label, manifest, track) sent to clients at `initialize`.
 
 ### 2.3 Status Code Mapping & Error Protocol
@@ -93,8 +93,7 @@ Errors are formatted via `handleApiError(error)` (`src/services/api-client.ts:47
 - `ECONNREFUSED`: `Error: Connection refused. Check network connectivity.`
 
 **Tool Return Protocol:**
-Tools catch exceptions and return `{ content: [{ type: 'text', text: handleApiError(error) }], isError: true }`.
-All 40 tools follow this protocol.
+Every tool returns through two helpers in `src/schemas/common.ts`: `toolResult(text, data)` on success and `toolError(text)` on failure (`{ content: [text], isError: true }`). Catch blocks return `toolError(handleApiError(error))`. Error results skip output-schema validation. All 40 tools follow this protocol.
 
 ---
 
