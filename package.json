@@ -1,30 +1,64 @@
 {
-  "name": "starshipit-mcp-server",
+  "name": "@devkind/starshipit-mcp",
   "version": "1.0.0",
-  "description": "MCP server for StarShipIt API integration — orders, shipments, tracking, rates, manifests, address book, and products",
+  "description": "MCP server for the StarShipIt shipping API: orders, shipments, labels, tracking, rates, manifests, address book and products",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "starshipit",
+    "shipping",
+    "logistics",
+    "ecommerce",
+    "claude"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devkindhq/starshipit-mcp.git"
+  },
+  "license": "ISC",
+  "author": {
+    "name": "Devkind",
+    "url": "https://devkind.com.au"
+  },
   "type": "module",
-  "main": "dist/index.js",
   "bin": {
-    "starshipit-mcp-server": "dist/index.js"
+    "starshipit-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "lint": "eslint src",
+    "bundle": "node scripts/build-mcpb.js",
+    "sync-tools": "node scripts/sync-manifest-tools.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
+  "packageManager": "npm@11.13.0",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.6.1",
-    "axios": "^1.7.9",
-    "zod": "^3.23.8"
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "axios": "^1.20.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.1.2",
+    "@eslint/js": "^10.0.1",
+    "@semantic-release/exec": "^7.1.0",
     "@types/express": "^5.0.6",
-    "@types/node": "^22.10.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "@types/node": "^22.20.5",
+    "eslint": "^10.12.0",
+    "fflate": "^0.8.3",
+    "semantic-release": "^25.0.9",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.2"
   }
 }

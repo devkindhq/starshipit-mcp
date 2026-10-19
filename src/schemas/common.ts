@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CHARACTER_LIMIT } from '../constants.js';
 
 export enum ResponseFormat {
   MARKDOWN = 'markdown',
@@ -63,4 +64,36 @@ export function truncateIfNeeded(text: string, limit: number): string {
   if (text.length <= limit) return text;
   const msg = `\n\n[Response truncated at ${limit} characters. Use pagination (page/limit) or filters to narrow results.]`;
   return text.slice(0, limit - msg.length) + msg;
+}
+
+// Every tool returns the raw StarShipIt response as structuredContent. The shape differs by
+// endpoint, so the schema names the common fields and passes the rest through; a strict schema
+// would turn any undocumented field into a failed tool call.
+export const ApiResultSchema = z
+  .object({
+    success: z.unknown().optional().describe('StarShipIt success flag (a boolean on most endpoints)'),
+    errors: z.unknown().optional().describe('Validation or processing errors returned by StarShipIt'),
+    object: z.unknown().optional().describe('The response payload when StarShipIt returns a non-object value'),
+  })
+  .passthrough()
+  .describe('Raw StarShipIt API response; not truncated');
+
+/**
+ * Success result for every tool: the text (capped at CHARACTER_LIMIT) for the model, and the
+ * full API response as structuredContent, which must be an object, so anything else is wrapped.
+ */
+export function toolResult(text: string, data: unknown) {
+  const structured =
+    typeof data === 'object' && data !== null && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : { object: data };
+  return {
+    content: [{ type: 'text' as const, text: truncateIfNeeded(text, CHARACTER_LIMIT) }],
+    structuredContent: structured,
+  };
+}
+
+/** Error result for every tool; clients and models treat isError results as failed calls. */
+export function toolError(text: string) {
+  return { content: [{ type: 'text' as const, text }], isError: true };
 }

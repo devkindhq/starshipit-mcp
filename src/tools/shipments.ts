@@ -1,24 +1,24 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiRequest, handleApiError } from '../services/api-client.js';
-import { PackageSchema, truncateIfNeeded } from '../schemas/common.js';
-import { CHARACTER_LIMIT } from '../constants.js';
+import { PackageSchema, ApiResultSchema, toolResult, toolError } from '../schemas/common.js';
 
 // ── Response shape interfaces ────────────────────────────────────────────────
 
+// orders/shipment returns base64 label strings; orders/shipments returns label objects.
 interface LabelEntry {
-  order_id?: number;
-  tracking_number?: string;
-  label_url?: string;
-  label_data?: string;
-  carrier?: string;
-  carrier_service?: string;
-  error?: string;
+  label_type?: string;
+  label_base64_string?: string;
 }
 
 interface PrintLabelResponse {
   success?: boolean;
-  labels?: LabelEntry[];
+  order_id?: number;
+  order_number?: string;
+  carrier_name?: string;
+  tracking_numbers?: string[];
+  labels?: (string | LabelEntry)[];
+  label_types?: string[];
   errors?: string[];
 }
 
@@ -31,10 +31,9 @@ interface PrintPackingSlipsResponse {
 
 interface ManifestResponse {
   success?: boolean;
-  manifest_id?: number;
-  created_date?: string;
-  carrier?: string;
-  tracking_numbers?: string[];
+  label_type?: string;
+  /** Base64 manifest PDF. */
+  pdf?: string;
   errors?: string[];
 }
 
@@ -195,6 +194,7 @@ export function registerShipmentTools(server: McpServer): void {
 
 **Error cases:** 400 if the order ID is invalid or required order data is missing; 404 if the order does not exist; 409 if a label has already been printed and \`reprint\` is not set to \`true\`.`,
       inputSchema: PrintLabelSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -217,10 +217,9 @@ export function registerShipmentTools(server: McpServer): void {
           body,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -263,6 +262,7 @@ export function registerShipmentTools(server: McpServer): void {
 
 **Error cases:** 400 if any order IDs are invalid or missing required order data; 404 if one or more orders do not exist; 409 if labels already exist and \`reprint\` is not \`true\`.`,
       inputSchema: PrintLabelsSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -281,10 +281,9 @@ export function registerShipmentTools(server: McpServer): void {
           body,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -313,6 +312,7 @@ export function registerShipmentTools(server: McpServer): void {
 
 **Error cases:** 400 if order IDs are missing or invalid; 404 if one or more specified orders do not exist.`,
       inputSchema: PrintPackingSlipsSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -328,10 +328,9 @@ export function registerShipmentTools(server: McpServer): void {
           { order_ids },
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -350,21 +349,20 @@ export function registerShipmentTools(server: McpServer): void {
 **Parameters:**
 - \`order_ids\` (required): Array of numeric StarShipIt order IDs to include in the manifest. All orders must already have labels printed.
 
-**Returns:** A manifest record containing the manifest ID, creation timestamp, carrier, and list of tracking numbers that were manifested.
+**Returns:** The manifest document as a base64 PDF, with its label type.
 
 **Example success response:**
 \`\`\`json
 {
   "success": true,
-  "manifest_id": 7890,
-  "created_date": "2024-01-15T09:30:00Z",
-  "carrier": "AUSPOST",
-  "tracking_numbers": ["TRACK001", "TRACK002", "TRACK003"]
+  "label_type": "PDF",
+  "pdf": "JVBERi0xLjQK..."
 }
 \`\`\`
 
 **Error cases:** 400 if order IDs are invalid or orders do not have labels printed; 404 if orders do not exist; 409 if orders are in an incompatible state for manifesting.`,
       inputSchema: ManifestShipmentSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -380,10 +378,9 @@ export function registerShipmentTools(server: McpServer): void {
           { order_ids },
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -417,6 +414,7 @@ export function registerShipmentTools(server: McpServer): void {
 
 **Error cases:** 400 if the order ID is invalid; 404 if the source order does not exist; 409 if the order cannot be cloned in its current state.`,
       inputSchema: CloneShipmentSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -436,10 +434,9 @@ export function registerShipmentTools(server: McpServer): void {
           body,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -476,6 +473,7 @@ export function registerShipmentTools(server: McpServer): void {
 
 **Error cases:** 400 if the order ID is invalid; 404 if the order does not exist; 409 if the order is manifested or already dispatched and cannot be replaced.`,
       inputSchema: ReplaceShipmentSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -491,10 +489,9 @@ export function registerShipmentTools(server: McpServer): void {
           { order_id },
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );

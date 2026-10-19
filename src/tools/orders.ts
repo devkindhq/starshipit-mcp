@@ -8,10 +8,11 @@ import {
   AddressSchema,
   PackageSchema,
   OrderItemSchema,
-  truncateIfNeeded,
+  ApiResultSchema,
+  toolResult,
+  toolError,
 } from '../schemas/common.js';
 import type { Order } from '../types.js';
-import { CHARACTER_LIMIT } from '../constants.js';
 
 // ---------------------------------------------------------------------------
 // Shared sub-schemas
@@ -198,6 +199,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -230,9 +232,9 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -279,6 +281,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -312,9 +315,9 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -352,6 +355,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -379,9 +383,9 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -412,6 +416,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -439,9 +444,9 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -485,6 +490,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -512,9 +518,9 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -551,6 +557,7 @@ export function registerOrderTools(server: McpServer): void {
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -578,9 +585,9 @@ export function registerOrderTools(server: McpServer): void {
             formatOrdersAsMarkdown(orders, { total: result.total, has_more, page });
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -631,6 +638,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -640,15 +648,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
     },
     async ({ order_id, order_number, response_format }) => {
       if (order_id === undefined && (order_number === undefined || order_number === '')) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Error: At least one of `order_id` or `order_number` must be provided.',
-            },
-          ],
-          isError: true,
-        };
+        return toolError('Error: At least one of `order_id` or `order_number` must be provided.');
       }
 
       try {
@@ -664,10 +664,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           result.order ?? (Array.isArray(result.orders) ? result.orders[0] : undefined);
 
         if (!order) {
-          return {
-            content: [{ type: 'text', text: 'Error: Order not found.' }],
-            isError: true,
-          };
+          return toolError('Error: Order not found.');
         }
 
         let text: string;
@@ -677,9 +674,9 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           text = '## Order Details\n\n' + formatOrdersAsMarkdown([order]);
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -714,6 +711,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           order: CreateOrderPayloadSchema.describe('Order data to create'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -734,9 +732,9 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           ? `Order created successfully.\n\n**Order ID:** ${created.order_id}\n**Order Number:** ${created.order_number}`
           : `Order creation request submitted.${result.success === false ? ' The API reported a failure — verify the order in StarShipIt.' : ''}`;
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -767,6 +765,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
             ),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -800,13 +799,9 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           }
         }
 
-        return {
-          content: [
-            { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
-          ],
-        };
+        return toolResult(lines.join('\n'), result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -835,6 +830,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           ),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -855,9 +851,9 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           ? `Order ${updated.order_id} updated successfully.\n**Order Number:** ${updated.order_number ?? '(unchanged)'}`
           : `Update request for order ${order.order_id} submitted.`;
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -888,6 +884,7 @@ At least one of \`order_id\` or \`order_number\` must be provided.
             ),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -918,13 +915,9 @@ At least one of \`order_id\` or \`order_number\` must be provided.
           lines.push(`- Order ID ${o.order_id}: ${o.order_number ?? 'updated'}`);
         }
 
-        return {
-          content: [
-            { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
-          ],
-        };
+        return toolResult(lines.join('\n'), result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -967,6 +960,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('Carrier identifier to assign to all specified orders'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -991,13 +985,9 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           );
         }
 
-        return {
-          content: [
-            { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
-          ],
-        };
+        return toolResult(lines.join('\n'), result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -1029,6 +1019,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('StarShipIt internal order ID to permanently delete'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -1038,15 +1029,11 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
     },
     async ({ order_id }) => {
       try {
-        await apiRequest<{ success?: boolean }>('orders/delete', 'DELETE', { order_id });
+        const result = await apiRequest<{ success?: boolean }>('orders/delete', 'DELETE', { order_id });
 
-        return {
-          content: [
-            { type: 'text', text: `Order ${order_id} has been permanently deleted.` },
-          ],
-        };
+        return toolResult(`Order ${order_id} has been permanently deleted.`, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -1076,6 +1063,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('StarShipIt internal order ID to archive'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -1085,18 +1073,11 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
     },
     async ({ order_id }) => {
       try {
-        await apiRequest<{ success?: boolean }>('orders/archive', 'POST', { order_id });
+        const result = await apiRequest<{ success?: boolean }>('orders/archive', 'POST', { order_id });
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Order ${order_id} has been archived. Use \`starshipit_restore_order\` to restore it.`,
-            },
-          ],
-        };
+        return toolResult(`Order ${order_id} has been archived. Use \`starshipit_restore_order\` to restore it.`, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -1126,6 +1107,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('StarShipIt internal order ID to restore from archive'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -1135,18 +1117,11 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
     },
     async ({ order_id }) => {
       try {
-        await apiRequest<{ success?: boolean }>('orders/restore', 'POST', { order_id });
+        const result = await apiRequest<{ success?: boolean }>('orders/restore', 'POST', { order_id });
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Order ${order_id} has been restored and is now active in the fulfilment queue.`,
-            },
-          ],
-        };
+        return toolResult(`Order ${order_id} has been restored and is now active in the fulfilment queue.`, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -1183,6 +1158,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('Array of order IDs to merge into the parent order'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -1203,9 +1179,9 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           ? `Orders merged successfully.\n\n**Parent Order ID:** ${merged.order_id}\n**Order Number:** ${merged.order_number}\n**Child orders merged:** ${child_order_ids.join(', ')}`
           : `Merge of orders ${child_order_ids.join(', ')} into parent ${parent_order_id} submitted.`;
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -1235,6 +1211,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           response_format: ResponseFormatSchema,
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -1296,9 +1273,9 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           }
         }
 
-        return { content: [{ type: 'text', text: truncateIfNeeded(text, CHARACTER_LIMIT) }] };
+        return toolResult(text, result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );
@@ -1348,6 +1325,7 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
             .describe('Array of order assignment instructions'),
         })
         .strict(),
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -1372,13 +1350,9 @@ At least one of \`product_code\` or \`carrier_id\` should be provided alongside 
           );
         }
 
-        return {
-          content: [
-            { type: 'text', text: truncateIfNeeded(lines.join('\n'), CHARACTER_LIMIT) },
-          ],
-        };
+        return toolResult(lines.join('\n'), result);
       } catch (err) {
-        return { content: [{ type: 'text', text: handleApiError(err) }], isError: true };
+        return toolError(handleApiError(err));
       }
     },
   );

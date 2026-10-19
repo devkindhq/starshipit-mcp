@@ -4,36 +4,35 @@ import { apiRequest, handleApiError } from '../services/api-client.js';
 import {
   ResponseFormat,
   ResponseFormatSchema,
-  truncateIfNeeded,
+  ApiResultSchema,
+  toolResult,
+  toolError,
 } from '../schemas/common.js';
-import { CHARACTER_LIMIT } from '../constants.js';
 
 // ── Response shape interfaces ────────────────────────────────────────────────
 
 interface TrackingEvent {
-  description?: string;
-  date?: string;
-  location?: string;
+  event_datetime?: string;
+  status?: string;
+  details?: string;
 }
 
 interface TrackingResult {
-  tracking_number?: string;
-  status?: string;
-  carrier?: string;
+  order_number?: string;
+  order_status?: string;
   carrier_name?: string;
-  service?: string;
-  estimated_delivery?: string;
-  shipped_date?: string;
-  delivered_date?: string;
-  origin?: string;
-  destination?: string;
-  events?: TrackingEvent[];
-  error?: string;
+  carrier_service?: string;
+  tracking_number?: string;
+  tracking_url?: string;
+  shipment_date?: string;
+  tracking_status?: string;
+  last_updated_date?: string;
+  tracking_events?: TrackingEvent[];
 }
 
 interface TrackingResponse {
   success?: boolean;
-  result?: TrackingResult;
+  results?: TrackingResult;
   errors?: string[];
 }
 
@@ -44,24 +43,17 @@ interface TrackingOrderEntry {
   tracking_number: string;
 }
 
-interface CreatedTrackingOrder {
-  order_id?: number;
-  order_number?: string;
-  tracking_number?: string;
-  carrier?: string;
-  error?: string;
-}
-
 interface CreateTrackingOrderResponse {
   success?: boolean;
-  orders?: CreatedTrackingOrder[];
+  /** Order ID → tracking number. */
+  orders?: Record<string, string>;
   errors?: string[];
 }
 
 // ── Formatting helpers ───────────────────────────────────────────────────────
 
 function formatTrackingMarkdown(data: TrackingResponse): string {
-  const r = data.result;
+  const r = data.results;
   if (!r) {
     if (data.errors && data.errors.length > 0) {
       return `Error: ${data.errors.join('; ')}`;
@@ -73,45 +65,23 @@ function formatTrackingMarkdown(data: TrackingResponse): string {
 
   lines.push(`## Tracking: ${r.tracking_number ?? 'Unknown'}`);
   lines.push('');
-  lines.push(`**Status:** ${r.status ?? 'Unknown'}`);
+  lines.push(`**Status:** ${r.tracking_status ?? 'Unknown'}`);
 
-  if (r.carrier_name ?? r.carrier) {
-    lines.push(`**Carrier:** ${r.carrier_name ?? r.carrier}`);
-  }
-  if (r.service) {
-    lines.push(`**Service:** ${r.service}`);
-  }
-  if (r.shipped_date) {
-    lines.push(`**Shipped:** ${r.shipped_date}`);
-  }
-  if (r.estimated_delivery) {
-    lines.push(`**Estimated Delivery:** ${r.estimated_delivery}`);
-  }
-  if (r.delivered_date) {
-    lines.push(`**Delivered:** ${r.delivered_date}`);
-  }
-  if (r.origin) {
-    lines.push(`**Origin:** ${r.origin}`);
-  }
-  if (r.destination) {
-    lines.push(`**Destination:** ${r.destination}`);
-  }
+  if (r.order_number) lines.push(`**Order:** ${r.order_number} (${r.order_status ?? 'unknown status'})`);
+  if (r.carrier_name) lines.push(`**Carrier:** ${r.carrier_name}`);
+  if (r.carrier_service) lines.push(`**Service:** ${r.carrier_service}`);
+  if (r.shipment_date) lines.push(`**Shipped:** ${r.shipment_date}`);
+  if (r.last_updated_date) lines.push(`**Last Updated:** ${r.last_updated_date}`);
+  if (r.tracking_url) lines.push(`**Tracking URL:** ${r.tracking_url}`);
 
-  if (r.events && r.events.length > 0) {
+  if (r.tracking_events && r.tracking_events.length > 0) {
     lines.push('');
     lines.push('### Tracking Events');
     lines.push('');
-    for (const event of r.events) {
-      const date = event.date ?? '';
-      const location = event.location ? ` — ${event.location}` : '';
-      const description = event.description ?? '(no description)';
-      lines.push(`- **${date}${location}:** ${description}`);
+    for (const event of r.tracking_events) {
+      const status = event.status ? ` — ${event.status}` : '';
+      lines.push(`- **${event.event_datetime ?? ''}${status}:** ${event.details ?? '(no details)'}`);
     }
-  }
-
-  if (r.error) {
-    lines.push('');
-    lines.push(`**Error:** ${r.error}`);
   }
 
   return lines.join('\n');
@@ -179,33 +149,33 @@ export function registerTrackingTools(server: McpServer): void {
       title: 'Track Shipment',
       description: `Track a shipment by tracking number using StarShipIt.
 
-**When to use:** Use this tool to retrieve the current status, tracking events, carrier details, and estimated delivery for any shipment tracked through StarShipIt. This works for shipments created in StarShipIt as well as tracking-only orders imported via \`starshipit_create_tracking_order\`.
+**When to use:** Use this tool to retrieve the current status, tracking events and carrier details for any shipment tracked through StarShipIt. This works for shipments created in StarShipIt as well as tracking-only orders imported via \`starshipit_create_tracking_order\`.
 
 **Parameters:**
 - \`tracking_number\` (required): The carrier tracking number to look up (e.g. \`"1Z999AA10123456784"\`).
 - \`response_format\` (optional): Output format — \`"markdown"\` (default) for a human-readable summary with formatted tracking events, or \`"json"\` for the raw API response suitable for programmatic use.
 
-**Returns:** Tracking status, a chronological list of tracking events (with date, location, and description), carrier name, service, shipped date, and estimated/actual delivery date.
+**Returns:** Tracking status, order number and status, carrier name, service, shipment date, last update, carrier tracking URL, and a list of tracking events (date, status, details).
 
 **Example success response (markdown format):**
 \`\`\`
-## Tracking: 1Z999AA10123456784
+## Tracking: 2XD198209601000935102
 
 **Status:** In Transit
-**Carrier:** UPS
-**Service:** EXPRESS
-**Shipped:** 2024-01-14T08:00:00Z
-**Estimated Delivery:** 2024-01-16T18:00:00Z
+**Order:** C12346 (Shipped)
+**Carrier:** Australia Post
+**Service:** 7B05
+**Shipped:** 2024-04-17T12:52:05
+**Tracking URL:** https://auspost.com.au/mypost/track/details/2XD198209601000935102
 
 ### Tracking Events
 
-- **2024-01-14T08:00:00Z — Sydney, NSW:** Package picked up
-- **2024-01-14T14:30:00Z — Sydney Airport:** Departed facility
-- **2024-01-15T09:00:00Z — Melbourne, VIC:** Arrived at destination facility
+- **2024-04-17T13:20:18 — In Transit:** Item processed at facility
 \`\`\`
 
 **Error cases:** 404 if the tracking number is not found in StarShipIt; 400 if the tracking number format is invalid.`,
       inputSchema: TrackShipmentSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -230,11 +200,9 @@ export function registerTrackingTools(server: McpServer): void {
         } else {
           text = formatTrackingMarkdown(result);
         }
-
-        text = truncateIfNeeded(text, CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(text, result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );
@@ -282,6 +250,7 @@ export function registerTrackingTools(server: McpServer): void {
 
 **Error cases:** 400 if carrier or tracking_number is missing for any entry; 409 if a tracking number already exists in the platform.`,
       inputSchema: CreateTrackingOrderSchema,
+      outputSchema: ApiResultSchema,
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -309,10 +278,9 @@ export function registerTrackingTools(server: McpServer): void {
           payload,
         );
 
-        const text = truncateIfNeeded(JSON.stringify(result, null, 2), CHARACTER_LIMIT);
-        return { content: [{ type: 'text' as const, text }] };
+        return toolResult(JSON.stringify(result, null, 2), result);
       } catch (error) {
-        return { content: [{ type: 'text' as const, text: handleApiError(error) }] };
+        return toolError(handleApiError(error));
       }
     },
   );

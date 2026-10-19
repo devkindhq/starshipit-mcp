@@ -2,7 +2,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import express from 'express';
+import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
+import { createRequire } from 'node:module';
 
 import { registerOrderTools } from './tools/orders.js';
 import { registerShipmentTools } from './tools/shipments.js';
@@ -12,26 +13,22 @@ import { registerAddressBookTools } from './tools/address-book.js';
 import { registerManifestTools } from './tools/manifests.js';
 import { registerProductTools } from './tools/products.js';
 
-function validateEnv(): void {
-  const missing: string[] = [];
-  if (!process.env.STARSHIPIT_API_KEY) missing.push('STARSHIPIT_API_KEY');
-  if (!process.env.STARSHIPIT_SUBSCRIPTION_KEY) missing.push('STARSHIPIT_SUBSCRIPTION_KEY');
-  if (missing.length > 0) {
-    console.error(
-      `ERROR: Missing required environment variables: ${missing.join(', ')}\n` +
-        'Set them in your environment or .env file:\n' +
-        '  STARSHIPIT_API_KEY       — from Settings > API > API Key\n' +
-        '  STARSHIPIT_SUBSCRIPTION_KEY — from Settings > API > Subscription key'
-    );
-    process.exit(1);
-  }
-}
+// package.json is the single source of the version; releases set it in CI.
+const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
 
 function createServer(): McpServer {
-  const server = new McpServer({
-    name: 'starshipit-mcp-server',
-    version: '1.0.0',
-  });
+  const server = new McpServer(
+    { name: 'starshipit-mcp', version },
+    {
+      instructions: `Tools for the StarShipIt shipping API. Typical flow:
+1. starshipit_create_order (or starshipit_create_orders_bulk) adds orders; starshipit_list_unshipped_orders reviews them.
+2. starshipit_get_delivery_services (for an order_id) or starshipit_get_rates (for a route) returns service codes and prices.
+3. starshipit_print_label generates a label; pass reprint: true if the order already has one.
+4. starshipit_manifest_shipment or starshipit_manifest_by_carrier sends shipments to the carrier.
+5. starshipit_track_shipment tracks a shipment.
+Notes: delete tools are permanent; archive is reversible with starshipit_restore_order. Text output is capped at 25,000 characters; the full API response is in structuredContent.`,
+    },
+  );
 
   registerOrderTools(server);
   registerShipmentTools(server);
@@ -45,45 +42,54 @@ function createServer(): McpServer {
 }
 
 async function runStdio(): Promise<void> {
-  validateEnv();
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('StarShipIt MCP server running via stdio');
 }
 
-async function runHttp(): Promise<void> {
-  validateEnv();
-  const server = createServer();
-  const app = express();
-  app.use(express.json());
+function runHttp(): void {
+  // Local only by default; the SDK then rejects other Host headers (DNS rebinding).
+  const host = process.env.MCP_HOST ?? '127.0.0.1';
+  const app = createMcpExpressApp({ host });
 
+  // Stateless mode: one server per request, because a server holds only one transport.
   app.post('/mcp', async (req, res) => {
+    const server = createServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
-    res.on('close', () => transport.close());
+    res.on('close', () => {
+      void transport.close();
+      void server.close();
+    });
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   });
+  // Stateless: no SSE stream or session to delete. Clients treat 405 as "not offered".
+  app.all('/mcp', (_req, res) => {
+    res.status(405).set('Allow', 'POST').end();
+  });
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', server: 'starshipit-mcp-server' });
+    res.json({ status: 'ok', server: 'starshipit-mcp', version });
   });
 
   const port = parseInt(process.env.PORT ?? '3000', 10);
-  app.listen(port, () => {
-    console.error(`StarShipIt MCP server running on http://localhost:${port}/mcp`);
+  // Express 5 passes listen errors (e.g. EADDRINUSE) to this callback.
+  app.listen(port, host, (err?: Error) => {
+    if (err) {
+      console.error('Server error:', err);
+      process.exit(1);
+    }
+    console.error(`StarShipIt MCP server running on http://${host}:${port}/mcp`);
   });
 }
 
 const transport = process.env.TRANSPORT ?? 'stdio';
 if (transport === 'http') {
-  runHttp().catch((err: unknown) => {
-    console.error('Server error:', err);
-    process.exit(1);
-  });
+  runHttp();
 } else {
   runStdio().catch((err: unknown) => {
     console.error('Server error:', err);
