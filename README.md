@@ -167,7 +167,7 @@ Development uses npm (`package-lock.json`) and Node.js 22 or later.
 git clone https://github.com/devkindhq/starshipit-mcp.git
 cd starshipit-mcp
 npm ci
-cp .env.example .env   # add your keys; .env is git-ignored
+printf 'STARSHIPIT_API_KEY=\nSTARSHIPIT_SUBSCRIPTION_KEY=\n' > .env   # fill in your keys; .env is git-ignored
 npm run build
 node --env-file=.env dist/index.js
 ```
