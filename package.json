@@ -1,5 +1,6 @@
 {
   "name": "@devkind/starshipit-mcp",
+  "mcpName": "io.github.devkindhq/starshipit-mcp",
   "version": "1.0.0",
   "description": "MCP server for the StarShipIt shipping API: orders, shipments, labels, tracking, rates, manifests, address book and products",
   "keywords": [

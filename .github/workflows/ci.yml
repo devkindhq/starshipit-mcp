@@ -22,11 +22,11 @@ jobs:
       - run: npm run lint
       - run: npm run build
       # Starts the server without credentials; fails if a tool change was not
-      # synced into manifest.json (run `npm run sync-tools` and commit).
+      # synced into manifest.json and server.json (run `npm run sync-tools` and commit).
       - name: Tool list in sync
         run: |
           npm run sync-tools
-          git diff --exit-code -- manifest.json
+          git diff --exit-code -- manifest.json server.json
       - name: Bundle builds and validates
         if: matrix.node == 24
         run: npm run bundle
