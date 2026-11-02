@@ -23,9 +23,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24 # trusted publishing needs npm >= 11.5.1
-          cache: npm
-      - run: npm ci
-      - run: npm run build
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
       - id: semantic
         run: npx semantic-release
         env:

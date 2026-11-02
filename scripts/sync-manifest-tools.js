@@ -3,7 +3,7 @@
 // names into server.json (MCP Registry), so registries can list tools without
 // starting the server. The strict MCPB schema allows only these two fields.
 // Starts dist/index.js with no credentials. CI runs this and fails on a diff.
-// Run after `npm run build`.
+// Run after `yarn build`.
 import fs from 'node:fs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
