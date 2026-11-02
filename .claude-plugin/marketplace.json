@@ -1,0 +1,12 @@
+{
+  "name": "starshipit-mcp",
+  "description": "StarShipIt MCP server as a Claude Code plugin.",
+  "owner": { "name": "Devkind", "url": "https://devkind.com.au" },
+  "plugins": [
+    {
+      "name": "starshipit",
+      "source": "./",
+      "description": "StarShipIt shipping MCP server: orders, labels, tracking, rates, manifests, address book and products."
+    }
+  ]
+}

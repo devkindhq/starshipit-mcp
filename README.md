@@ -1,82 +1,16 @@
-# StarShipIt MCP Server
+# StarShipIt MCP Server: shipping orders, labels and tracking for AI agents
 
-A Model Context Protocol (MCP) server for the [StarShipIt](https://starshipit.com) shipping API. It lets an AI assistant manage orders, print labels, track shipments, compare rates, manifest with carriers, and maintain the address book and product catalogue through any MCP client.
+[![npm](https://img.shields.io/npm/v/%40devkind%2Fstarshipit-mcp)](https://www.npmjs.com/package/@devkind/starshipit-mcp)
+[![CI](https://img.shields.io/github/actions/workflow/status/devkindhq/starshipit-mcp/ci.yml?label=CI)](https://github.com/devkindhq/starshipit-mcp/actions/workflows/ci.yml)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 
-Built by [Devkind](https://devkind.com.au).
+StarShipIt MCP server lets Claude Desktop, Claude Code, Cursor, VS Code and any MCP client manage [StarShipIt](https://starshipit.com) orders, print labels, track shipments, compare rates and manifest with carriers. It runs with `npx` on Node.js 22 or later, over stdio or local HTTP, and calls the StarShipIt API with your own keys.
 
-[![NPM Version](https://img.shields.io/npm/v/%40devkind%2Fstarshipit-mcp)](https://www.npmjs.com/package/@devkind/starshipit-mcp)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+## Quickstart
 
-## Features
-
-- **40 tools** across orders, shipments, tracking, rates, address book, manifests and products
-- **Tool annotations**: every tool declares MCP annotations. 15 tools are read-only and 5 are marked destructive, so clients can ask before they change data
-- **Markdown or JSON output** on list and lookup tools, plus the full API response as structured content on every tool
-- **stdio and HTTP transports**. HTTP mode listens on `127.0.0.1` by default and rejects foreign `Host` headers
-- **Runs with npx**. No clone or global install. Needs Node.js 22 or later
-
-## Available Tools
-
-| Domain | Count | Tools |
-|---|---|---|
-| Orders | 18 | list unshipped, printed, shipped and delivered; summary; search; get; create; create bulk; update; update bulk; batch update; delete; archive; restore; merge; suggested merges; assign |
-| Shipments | 6 | print label, print labels, print packing slips, manifest, clone, replace |
-| Tracking | 2 | track shipment, create tracking-only order |
-| Rates | 2 | get rates, get delivery services |
-| Address book | 4 | list, add, update, delete |
-| Manifests | 4 | list, get files, manifest by tracking number, manifest by carrier |
-| Products | 4 | list and search, add, update, delete |
-
-Destructive tools: `starshipit_delete_order`, `starshipit_merge_orders`, `starshipit_replace_shipment`, `starshipit_delete_addresses`, `starshipit_delete_products`.
-
-## Quick Start
-
-You need Node.js 22 or later and two keys from StarShipIt.
-
-**Step 1. Get your API keys**
-
-1. Log in to StarShipIt.
-2. Go to **Settings > API**.
-3. Copy the **API Key** (`STARSHIPIT_API_KEY`) and the **Subscription key** (`STARSHIPIT_SUBSCRIPTION_KEY`).
-
-**Step 2. Add the server to your MCP client** (see [Client Setup](#client-setup)).
-
-**Step 3. Restart the client and try it**
-
-Ask: _"List my unshipped StarShipIt orders."_
-
-The server starts and lists its tools without keys. Without valid keys, each tool call returns an error that names the missing variable.
-
-## Client Setup
-
-### Claude Desktop
-
-Open **Settings > Developer > Edit Config**, or edit the file directly:
-
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "starshipit": {
-      "command": "npx",
-      "args": ["-y", "@devkind/starshipit-mcp"],
-      "env": {
-        "STARSHIPIT_API_KEY": "your-api-key",
-        "STARSHIPIT_SUBSCRIPTION_KEY": "your-subscription-key"
-      }
-    }
-  }
-}
-```
-
-Restart Claude Desktop. The StarShipIt tools appear in the tools menu.
-
-### Claude Code
+Get your keys in StarShipIt under **Settings > API**: the **API Key** and the **Subscription key**. Then, for Claude Code:
 
 ```bash
-# Prompts for each key without echoing it or saving it to shell history
 read -rsp 'StarShipIt API key: ' STARSHIPIT_API_KEY; echo
 read -rsp 'StarShipIt subscription key: ' STARSHIPIT_SUBSCRIPTION_KEY; echo
 claude mcp add --scope local starshipit \
@@ -85,12 +19,19 @@ claude mcp add --scope local starshipit \
   -- npx -y @devkind/starshipit-mcp
 ```
 
-`--scope local` keeps the keys in your user config, outside the repository. Do not put the keys in a project `.mcp.json`, because that file is meant to be committed.
+`read -rsp` keeps the keys out of your shell history. `--scope local` stores them in your user config, outside the repository.
 
-<details>
-<summary>Cursor</summary>
+Then ask: *"List my unshipped StarShipIt orders."*
 
-Add this to your Cursor `mcp.json`:
+### Install in your client
+
+Requirements:
+
+- Node.js 22 or later (the server runs with `npx`)
+- A StarShipIt API key and subscription key
+- Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, or another MCP client
+
+**Standard config** works in most MCP clients:
 
 ```json
 {
@@ -106,6 +47,32 @@ Add this to your Cursor `mcp.json`:
   }
 }
 ```
+
+Do not put real keys in a project `.mcp.json` or any other file that you commit.
+
+<details>
+<summary>Claude Desktop</summary>
+
+Open **Settings > Developer > Edit Config**, or edit the file directly:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add the standard config, then restart Claude Desktop. The StarShipIt tools appear in the tools menu.
+
+</details>
+
+<details>
+<summary>Claude Code</summary>
+
+Use the `claude mcp add` command from the [Quickstart](#quickstart), or install the [Claude Code plugin](#claude-code-plugin).
+
+</details>
+
+<details>
+<summary>Cursor</summary>
+
+Add the standard config to your Cursor `mcp.json`.
 
 </details>
 
@@ -119,13 +86,58 @@ code --add-mcp '{"name":"starshipit","command":"npx","args":["-y","@devkind/star
 </details>
 
 <details>
-<summary>Other MCP clients</summary>
+<summary>Windsurf</summary>
 
-Most clients accept the same `mcpServers` entry as Claude Desktop above: command `npx`, arguments `-y @devkind/starshipit-mcp`, and the two environment variables.
+Follow the Windsurf MCP [documentation](https://docs.windsurf.com/windsurf/cascade/mcp) and use the standard config above.
 
 </details>
 
-## Environment Variables
+<details>
+<summary>Other MCP clients</summary>
+
+Most clients accept the standard config: command `npx`, arguments `-y @devkind/starshipit-mcp`, and the two environment variables.
+
+</details>
+
+## Tools
+
+The server has 40 tools. Every tool declares MCP annotations: 15 are read-only and 5 are destructive, so a client can ask before it changes data. 20 list and lookup tools accept `response_format` (`markdown` or `json`). Every tool also returns the full API response as structured content.
+
+| Area | Count | Tools |
+|---|---|---|
+| Orders | 18 | list unshipped, printed, shipped and delivered; summary; search; get; create; create bulk; update; update bulk; batch update; delete; archive; restore; merge; suggested merges; assign |
+| Shipments | 6 | print label, print labels, print packing slips, manifest, clone, replace |
+| Tracking | 2 | track shipment, create tracking-only order |
+| Rates | 2 | get rates, get delivery services |
+| Address book | 4 | list, add, update, delete |
+| Manifests | 4 | list, get files, manifest by tracking number, manifest by carrier |
+| Products | 4 | list and search, add, update, delete |
+
+Destructive tools: `starshipit_delete_order`, `starshipit_merge_orders`, `starshipit_replace_shipment`, `starshipit_delete_addresses`, `starshipit_delete_products`. Archive is reversible with `starshipit_restore_order`.
+
+## Example
+
+```json
+{ "tool": "starshipit_track_shipment", "arguments": { "tracking_number": "2XD198209601000935102" } }
+```
+
+Illustrative output (the values are not real):
+
+```markdown
+## Tracking: 2XD198209601000935102
+
+**Status:** InTransit
+**Order:** 1001 (Shipped)
+**Carrier:** Australia Post
+
+### Tracking Events
+
+- **2026-10-30T09:12:00Z — InTransit:** Item processed at facility
+```
+
+Other prompts: *"Compare rates for a 2 kg parcel from Melbourne 3000 to Paddington 2021"*, *"Which orders can be merged?"*, *"Manifest all unmanifested Australia Post shipments"*.
+
+## Configuration
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
@@ -135,19 +147,21 @@ Most clients accept the same `mcpServers` entry as Claude Desktop above: command
 | `MCP_HOST` | No | `127.0.0.1` | HTTP bind address (when `TRANSPORT=http`) |
 | `PORT` | No | `3000` | HTTP port (when `TRANSPORT=http`) |
 
-## Example Prompts
+The server starts and lists its tools without keys. Each tool call without keys returns an error that names the missing variable.
+
+## Claude Code plugin
+
+The repository root is a Claude Code plugin. It adds the StarShipIt MCP server, pinned to the release version, and prompts for the two keys when you enable it. Claude Code stores the keys in your system credential store, not in `settings.json`.
+
+Install it now (Claude Code 2.1.275 or later):
 
 ```
-"Show my unshipped orders from the last 7 days"
-"Track shipment 2XD198209601000935102"
-"Compare rates for a 2 kg parcel from Melbourne 3000 to Paddington 2021"
-"Which orders can be merged?"
-"Print the label for order 398667087"
-"Manifest all unmanifested Australia Post shipments"
-"Find the product with SKU AMZ-BLK-SHOES-US11"
+/plugin install starshipit --marketplace devkindhq/starshipit-mcp
 ```
 
-## HTTP Mode
+On older Claude Code versions, use the `claude mcp add` command in the [Quickstart](#quickstart). A listing in the Claude plugin directory comes later.
+
+## HTTP mode
 
 ```bash
 TRANSPORT=http STARSHIPIT_API_KEY=... STARSHIPIT_SUBSCRIPTION_KEY=... npx -y @devkind/starshipit-mcp
@@ -155,60 +169,30 @@ TRANSPORT=http STARSHIPIT_API_KEY=... STARSHIPIT_SUBSCRIPTION_KEY=... npx -y @de
 # Health check: http://127.0.0.1:3000/health
 ```
 
-By default the server listens on `127.0.0.1` only and rejects requests whose `Host` header is not `localhost`, `127.0.0.1` or `::1`. This blocks DNS rebinding attacks from web pages. Set `MCP_HOST=0.0.0.0` to listen on all interfaces, for example in a container.
+By default the server listens on `127.0.0.1` only. It rejects requests whose `Host` header is not `localhost`, `127.0.0.1` or `::1`, which blocks DNS rebinding attacks from web pages. Set `MCP_HOST=0.0.0.0` to listen on all interfaces, for example in a container.
 
 > **Warning:** HTTP mode has no authentication, and every request runs with the server's StarShipIt keys. If you set `MCP_HOST` to anything other than a loopback address, put an authenticating proxy in front of the server.
 
 ## Development
 
-Development uses Yarn 1 (`yarn.lock`) and Node.js 22 or later.
-
 ```bash
 git clone https://github.com/devkindhq/starshipit-mcp.git
 cd starshipit-mcp
 yarn install --frozen-lockfile
-printf 'STARSHIPIT_API_KEY=\nSTARSHIPIT_SUBSCRIPTION_KEY=\n' > .env   # fill in your keys; .env is git-ignored
 yarn build
 node --env-file=.env dist/index.js
 ```
 
-| Script | Purpose |
-|---|---|
-| `yarn dev` | Run from source with reload (`tsx watch`) |
-| `yarn build` | Compile TypeScript to `dist/` |
-| `yarn start` | Run the compiled server |
-| `yarn lint` | ESLint with type-aware rules |
-| `yarn sync-tools` | Write the tool list into `manifest.json`. Run it after you add, rename or remove a tool |
-| `yarn bundle` | Build `starshipit-mcp.mcpb` with production dependencies only |
+Put your keys in `.env` (`STARSHIPIT_API_KEY=` and `STARSHIPIT_SUBSCRIPTION_KEY=`). Git ignores that file. See [CONTRIBUTING.md](CONTRIBUTING.md) for the checks, commit style and release process.
 
-CI runs lint, build and the tool-list check on Node.js 22 and 24, and builds the bundle, on every pull request.
+## Built by
 
-### Releases
-
-A merge to `main` releases automatically with [semantic-release](https://semantic-release.gitbook.io/), based on [Conventional Commits](https://www.conventionalcommits.org/):
-
-| Commit type | Release |
-|---|---|
-| `fix:` | patch |
-| `feat:` | minor |
-| `feat!:` or `BREAKING CHANGE:` | major |
-| `docs:`, `chore:`, `ci:`, `refactor:`, `test:` | none |
-
-Each release publishes to npm and creates a GitHub release with the MCPB bundle (`starshipit-mcp.mcpb`) attached. Git tags record the versions; `package.json` in git stays at `1.0.0`.
-
-To publish a release to [Smithery](https://smithery.ai) (needs `gh` and `smithery` logged in):
-
-```bash
-node scripts/publish-smithery.js v1.2.3 --dry-run
-node scripts/publish-smithery.js v1.2.3
-```
+Built by [Devkind](https://devkind.com.au). Maintained by the Devkind team.
 
 ## License
 
-[ISC](LICENSE)
+[ISC](LICENSE). See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
-## Resources
+## Shipping with StarShipIt?
 
-- [MCP Specification](https://modelcontextprotocol.io/specification/2025-06-18)
-- [StarShipIt API Documentation](https://api-docs.starshipit.com/)
-- [Devkind](https://devkind.com.au)
+Devkind builds the store and fulfilment side around it. We work with [Shopify](https://devkind.com.au/services/shopify), [Swell](https://devkind.com.au/services/swell) and [headless commerce](https://devkind.com.au/services/headless-ecommerce) stacks, and build custom MCP servers and AI agent workflows for operations teams. [Talk to Devkind](https://devkind.com.au/services) or email [hello@devkind.com.au](mailto:hello@devkind.com.au).

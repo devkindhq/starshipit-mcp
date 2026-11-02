@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "starshipit": {
+      "command": "npx",
+      "args": ["-y", "@devkind/starshipit-mcp@1.2.0"],
+      "env": {
+        "STARSHIPIT_API_KEY": "${user_config.api_key}",
+        "STARSHIPIT_SUBSCRIPTION_KEY": "${user_config.subscription_key}"
+      }
+    }
+  }
+}

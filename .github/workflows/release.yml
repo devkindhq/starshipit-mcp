@@ -38,5 +38,5 @@ jobs:
         if: steps.semantic.outputs.version != ''
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.7/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
-          ./mcp-publisher login github-oidc
-          ./mcp-publisher publish
+          # npm can take a minute to serve a new version, and the registry checks npm.
+          for i in 1 2 3 4 5 6 7 8 9 10; do ./mcp-publisher login github-oidc && ./mcp-publisher publish && exit 0; sleep 30; done; exit 1

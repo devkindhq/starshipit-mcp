@@ -38,49 +38,7 @@
 	"_meta": {
 		"io.modelcontextprotocol.registry/publisher-provided": {
 			"author": "Devkind",
-			"website": "https://devkind.com.au",
-			"tools": [
-				"starshipit_list_unshipped_orders",
-				"starshipit_list_printed_orders",
-				"starshipit_list_shipped_orders",
-				"starshipit_list_delivered_orders",
-				"starshipit_get_orders_summary",
-				"starshipit_search_orders",
-				"starshipit_get_order",
-				"starshipit_create_order",
-				"starshipit_create_orders_bulk",
-				"starshipit_update_order",
-				"starshipit_update_orders_bulk",
-				"starshipit_batch_update_orders",
-				"starshipit_delete_order",
-				"starshipit_archive_order",
-				"starshipit_restore_order",
-				"starshipit_merge_orders",
-				"starshipit_get_suggested_merges",
-				"starshipit_assign_orders",
-				"starshipit_print_label",
-				"starshipit_print_labels",
-				"starshipit_print_packing_slips",
-				"starshipit_manifest_shipment",
-				"starshipit_clone_shipment",
-				"starshipit_replace_shipment",
-				"starshipit_track_shipment",
-				"starshipit_create_tracking_order",
-				"starshipit_get_rates",
-				"starshipit_get_delivery_services",
-				"starshipit_list_addresses",
-				"starshipit_add_address",
-				"starshipit_update_address",
-				"starshipit_delete_addresses",
-				"starshipit_list_manifests",
-				"starshipit_get_manifest_files",
-				"starshipit_manifest_by_tracking",
-				"starshipit_manifest_by_carrier",
-				"starshipit_list_products",
-				"starshipit_add_product",
-				"starshipit_update_product",
-				"starshipit_delete_products"
-			]
+			"website": "https://devkind.com.au"
 		}
 	}
 }
