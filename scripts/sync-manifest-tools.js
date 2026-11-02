@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Writes the server's tools (name + summary) into manifest.json, and the tool
-// names into server.json (MCP Registry), so registries can list tools without
-// starting the server. The strict MCPB schema allows only these two fields.
+// Writes the server's tools (name + summary) into manifest.json, so registries
+// can list tools without starting the server. The strict MCPB schema allows
+// only these two fields.
 // Starts dist/index.js with no credentials. CI runs this and fails on a diff.
 // Run after `yarn build`.
 import fs from 'node:fs';
@@ -27,10 +27,4 @@ manifest.tools = tools.map((tool) => ({
 	description: (tool.description ?? '').split('\n\n')[0].trim(),
 }));
 fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
-
-const serverJson = JSON.parse(fs.readFileSync('server.json', 'utf8'));
-serverJson._meta['io.modelcontextprotocol.registry/publisher-provided'].tools = tools.map(
-	(tool) => tool.name,
-);
-fs.writeFileSync('server.json', JSON.stringify(serverJson, null, '\t') + '\n');
-console.log(`Wrote ${tools.length} tools to manifest.json and server.json`);
+console.log(`Wrote ${tools.length} tools to manifest.json`);

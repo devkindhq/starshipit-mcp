@@ -1,0 +1,26 @@
+{
+  "name": "starshipit",
+  "version": "1.2.0",
+  "description": "StarShipIt shipping MCP server: orders, labels, tracking, rates, manifests, address book and products.",
+  "author": { "name": "Devkind", "url": "https://devkind.com.au" },
+  "homepage": "https://github.com/devkindhq/starshipit-mcp",
+  "repository": "https://github.com/devkindhq/starshipit-mcp",
+  "license": "ISC",
+  "keywords": ["starshipit", "shipping", "logistics", "ecommerce", "mcp", "mcp-server"],
+  "userConfig": {
+    "api_key": {
+      "type": "string",
+      "title": "StarShipIt API key",
+      "description": "StarShipIt > Settings > API > API Key",
+      "required": true,
+      "sensitive": true
+    },
+    "subscription_key": {
+      "type": "string",
+      "title": "StarShipIt subscription key",
+      "description": "StarShipIt > Settings > API > Subscription key",
+      "required": true,
+      "sensitive": true
+    }
+  }
+}

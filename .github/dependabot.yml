@@ -9,6 +9,10 @@ updates:
       prefix: fix
       prefix-development: chore
       include: scope
+    ignore:
+      # Node types must match engines.node (>=22), not the newest Node major.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       runtime:
         dependency-type: production

@@ -24,7 +24,7 @@ This document is the authoritative technical reference for the `starshipit-mcp` 
 - **Key Dependencies:**
   - `@modelcontextprotocol/sdk` (`^1.32.1`): Core MCP server SDK (`McpServer`, `StdioServerTransport`, `StreamableHTTPServerTransport`).
   - `axios` (`^1.20.0`): HTTP client for the Starshipit REST API.
-  - `zod` (`^3.25.76`): Schema definition and runtime validation for MCP tool inputs.
+  - `zod` (`^4.6.7`): Schema definition and runtime validation for MCP tool inputs. The SDK resolves to the same copy, so the bundle ships one zod.
 - **Version:** read at runtime from `package.json` (`src/index.ts`); no version constant in `src`. semantic-release sets it in CI at release time.
 
 ### 1.3 Transport Modes & Server Lifecycle (`src/index.ts`)
@@ -45,7 +45,8 @@ The server supports two mutually exclusive runtime transports, selected via `pro
 - **npm package:** `@devkind/starshipit-mcp`, public. `files` ships only `dist/`.
 - **MCPB bundle:** `manifest.json` (MCPB `0.3`) defines `user_config` (both keys, `required` and `sensitive`) and a `tools` list (name + summary). `yarn sync-tools` (`scripts/sync-manifest-tools.js`) writes that list from the running server; CI fails if it is out of date. `yarn bundle` (`scripts/build-mcpb.js`) packs a staging copy with production dependencies only and copies the `package.json` version into the bundle manifest.
 - **Release:** `.github/workflows/release.yml` runs semantic-release (`.releaserc.json`) on each push to `main`: version from Conventional Commits, npm publish (trusted publishing via OIDC, `NPM_TOKEN` fallback), then a GitHub release with `starshipit-mcp.mcpb`. Nothing is committed back to `main` (rulesets require PRs). The npm plugin runs before the bundle step, so the bundle gets the release version.
-- **Smithery:** `scripts/publish-smithery.js <tag>` republishes a release bundle as `devkind/starshipit-mcp`, with full tool schemas added to its manifest copy (Smithery needs them; strict MCPB rejects them).
+- **MCP Registry:** after a release, the workflow publishes `server.json` with `mcp-publisher` and retries for npm lag. `server.json` lists no tools; `sync-tools` writes only `manifest.json`.
+- **Claude Code plugin:** `.claude-plugin/plugin.json` and `.mcp.json` at the root. `.mcp.json` pins `npx -y @devkind/starshipit-mcp@<version>` and passes both keys from plugin `userConfig` (`${user_config.api_key}`, `${user_config.subscription_key}`). Releases do not rewrite these files; bump both versions by hand in the release PR.
 
 ---
 
