@@ -43,7 +43,7 @@ The server supports two mutually exclusive runtime transports, selected via `pro
 
 ### 1.4 Packaging & Release
 - **npm package:** `@devkind/starshipit-mcp`, public. `files` ships only `dist/`.
-- **MCPB bundle:** `manifest.json` (MCPB `0.3`) defines `user_config` (both keys, `required` and `sensitive`) and a `tools` list (name + summary). `npm run sync-tools` (`scripts/sync-manifest-tools.js`) writes that list from the running server; CI fails if it is out of date. `npm run bundle` (`scripts/build-mcpb.js`) packs a staging copy with production dependencies only and copies the `package.json` version into the bundle manifest.
+- **MCPB bundle:** `manifest.json` (MCPB `0.3`) defines `user_config` (both keys, `required` and `sensitive`) and a `tools` list (name + summary). `yarn sync-tools` (`scripts/sync-manifest-tools.js`) writes that list from the running server; CI fails if it is out of date. `yarn bundle` (`scripts/build-mcpb.js`) packs a staging copy with production dependencies only and copies the `package.json` version into the bundle manifest.
 - **Release:** `.github/workflows/release.yml` runs semantic-release (`.releaserc.json`) on each push to `main`: version from Conventional Commits, npm publish (trusted publishing via OIDC, `NPM_TOKEN` fallback), then a GitHub release with `starshipit-mcp.mcpb`. Nothing is committed back to `main` (rulesets require PRs). The npm plugin runs before the bundle step, so the bundle gets the release version.
 - **Smithery:** `scripts/publish-smithery.js <tag>` republishes a release bundle as `devkind/starshipit-mcp`, with full tool schemas added to its manifest copy (Smithery needs them; strict MCPB rejects them).
 

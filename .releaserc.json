@@ -4,7 +4,13 @@
 		"@semantic-release/commit-analyzer",
 		"@semantic-release/release-notes-generator",
 		"@semantic-release/npm",
-		["@semantic-release/exec", { "prepareCmd": "npm run bundle" }],
+		[
+			"@semantic-release/exec",
+			{
+				"prepareCmd": "jq --arg v ${nextRelease.version} '.version = $v | .packages[0].version = $v' server.json > server.tmp && mv server.tmp server.json && yarn bundle",
+				"successCmd": "echo \"version=${nextRelease.version}\" >> \"$GITHUB_OUTPUT\""
+			}
+		],
 		[
 			"@semantic-release/github",
 			{ "assets": [{ "path": "starshipit-mcp.mcpb", "label": "MCPB bundle" }] }

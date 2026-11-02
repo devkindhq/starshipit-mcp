@@ -23,11 +23,20 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24 # trusted publishing needs npm >= 11.5.1
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - run: npx semantic-release
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+      - id: semantic
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Bootstrap only: delete the secret once the npm trusted publisher works.
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # semantic-release sets `version` only when it published a release.
+      # server.json already carries that version from the prepare step.
+      - name: Publish to MCP Registry
+        if: steps.semantic.outputs.version != ''
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.7/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
