@@ -649,7 +649,7 @@ The codebase uses three different address schemas for distinct operational conte
 
 AI agents interacting with or refactoring this codebase must account for the following runtime quirks and known discrepancies identified against the Starshipit API:
 
-Response shapes for tracking, products, rates, delivery services, manifests, manifest files and labels were checked against the saved examples in StarShipIt's Postman collection and fixed on 2026-10-16. The markdown formatters read `results`, `data.products`/`total_records`, `total_price`, and the manifest fields `id`/`name`/`date`/`numberConsignments`. Handlers that return raw JSON (labels, tracking-only orders) were never affected.
+Response shapes for tracking, products, rates, delivery services, manifests, manifest files and labels were checked against StarShipIt's API examples and fixed on 2026-10-16. The markdown formatters read `results`, `data.products`/`total_records`, `total_price`, and the manifest fields `id`/`name`/`date`/`numberConsignments`. Handlers that return raw JSON (labels, tracking-only orders) were never affected.
 
 | Subsystem | Exact Issue | Source Reference | Real Starshipit API Behavior | Impact & Guidance |
 | :--- | :--- | :--- | :--- | :--- |
