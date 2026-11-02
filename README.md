@@ -161,25 +161,25 @@ By default the server listens on `127.0.0.1` only and rejects requests whose `Ho
 
 ## Development
 
-Development uses npm (`package-lock.json`) and Node.js 22 or later.
+Development uses Yarn 1 (`yarn.lock`) and Node.js 22 or later.
 
 ```bash
 git clone https://github.com/devkindhq/starshipit-mcp.git
 cd starshipit-mcp
-npm ci
+yarn install --frozen-lockfile
 printf 'STARSHIPIT_API_KEY=\nSTARSHIPIT_SUBSCRIPTION_KEY=\n' > .env   # fill in your keys; .env is git-ignored
-npm run build
+yarn build
 node --env-file=.env dist/index.js
 ```
 
 | Script | Purpose |
 |---|---|
-| `npm run dev` | Run from source with reload (`tsx watch`) |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm start` | Run the compiled server |
-| `npm run lint` | ESLint with type-aware rules |
-| `npm run sync-tools` | Write the tool list into `manifest.json`. Run it after you add, rename or remove a tool |
-| `npm run bundle` | Build `starshipit-mcp.mcpb` with production dependencies only |
+| `yarn dev` | Run from source with reload (`tsx watch`) |
+| `yarn build` | Compile TypeScript to `dist/` |
+| `yarn start` | Run the compiled server |
+| `yarn lint` | ESLint with type-aware rules |
+| `yarn sync-tools` | Write the tool list into `manifest.json`. Run it after you add, rename or remove a tool |
+| `yarn bundle` | Build `starshipit-mcp.mcpb` with production dependencies only |
 
 CI runs lint, build and the tool-list check on Node.js 22 and 24, and builds the bundle, on every pull request.
 
