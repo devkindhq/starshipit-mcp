@@ -1,5 +1,6 @@
 {
   "name": "starshipit",
+  "displayName": "StarShipIt MCP",
   "version": "1.3.0",
   "description": "StarShipIt shipping MCP server: orders, labels, tracking, rates, manifests, address book and products.",
   "author": { "name": "Devkind", "url": "https://devkind.com.au" },
@@ -7,6 +8,7 @@
   "repository": "https://github.com/devkindhq/starshipit-mcp",
   "license": "ISC",
   "keywords": ["starshipit", "shipping", "logistics", "ecommerce", "mcp", "mcp-server"],
+  "icon": "./assets/icon.png",
   "userConfig": {
     "api_key": {
       "type": "string",

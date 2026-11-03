@@ -149,6 +149,14 @@ Other prompts: *"Compare rates for a 2 kg parcel from Melbourne 3000 to Paddingt
 
 The server starts and lists its tools without keys. Each tool call without keys returns an error that names the missing variable.
 
+## Network access and data
+
+- The plugin starts the server with `npx`, so npx downloads the pinned `@devkind/starshipit-mcp` package from the npm registry.
+- The server sends requests only to `https://api.starshipit.com/api`. Each request carries your two keys and the tool arguments, such as order details, addresses and tracking numbers.
+- Labels, packing slips and manifests come back in the tool result as URLs or base64. The server does not download the URLs.
+- The server sends no telemetry and stores no data. It writes errors to stderr only.
+- In HTTP mode the server also accepts requests on `MCP_HOST` and `PORT`. See [HTTP mode](#http-mode).
+
 ## Claude Code plugin
 
 The repository root is a Claude Code plugin. It adds the StarShipIt MCP server, pinned to the release version, and prompts for the two keys when you enable it. Claude Code stores the keys in your system credential store, not in `settings.json`.
