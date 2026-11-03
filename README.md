@@ -153,6 +153,8 @@ The server starts and lists its tools without keys. Each tool call without keys 
 
 The repository root is a Claude Code plugin. It adds the StarShipIt MCP server, pinned to the release version, and prompts for the two keys when you enable it. Claude Code stores the keys in your system credential store, not in `settings.json`.
 
+The plugin also ships the `starshipit-shipping` skill. The skill teaches Claude the fulfilment order: find the order, pick a service, print the label, manifest and track. Claude asks you before it prints a label, manifests or runs a destructive tool.
+
 Install it now (Claude Code 2.1.275 or later):
 
 ```
