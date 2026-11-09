@@ -9,6 +9,7 @@
   "license": "ISC",
   "keywords": ["starshipit", "shipping", "logistics", "ecommerce", "mcp", "mcp-server"],
   "icon": "./assets/icon.png",
+  "privacyPolicyUrl": "https://devkind.com.au/privacy-policy",
   "userConfig": {
     "api_key": {
       "type": "string",
