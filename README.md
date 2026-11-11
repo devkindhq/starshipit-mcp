@@ -3,6 +3,7 @@
 [![npm](https://img.shields.io/npm/v/%40devkind%2Fstarshipit-mcp)](https://www.npmjs.com/package/@devkind/starshipit-mcp)
 [![CI](https://img.shields.io/github/actions/workflow/status/devkindhq/starshipit-mcp/ci.yml?label=CI)](https://github.com/devkindhq/starshipit-mcp/actions/workflows/ci.yml)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+[![M8ven Verified](https://m8ven.ai/badge/mcp/devkindhq-starshipit-mcp-beb99b?variant=verified&v=50c06fa7730a281b19dd12bb73dce88a)](https://m8ven.ai/mcp/devkindhq-starshipit-mcp-beb99b?s=readme)
 
 StarShipIt MCP server lets Claude Desktop, Claude Code, Cursor, VS Code and any MCP client manage [StarShipIt](https://starshipit.com) orders, print labels, track shipments, compare rates and manifest with carriers. It runs with `npx` on Node.js 22 or later, over stdio or local HTTP, and calls the StarShipIt API with your own keys.
 
